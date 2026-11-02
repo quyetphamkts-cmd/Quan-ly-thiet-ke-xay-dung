@@ -1216,7 +1216,7 @@ details.kb li{padding:2px 0}
     }).join('');
     return rows||'<p class="empty">'+(vl.f==='err'?'Chưa có lỗi nào.':'Nhật ký trống.')+'</p>';
   }
-  function relList(list){return list.map(function(e){return '<details class="kb"'+(e.v===SCT.ver?' open':'')+'><summary><b>Phiên bản '+esc(e.v)+'</b><span class="pill muted">'+esc(e.d)+'</span>'+(e.v===SCT.ver?'<span class="pill good">Đang dùng</span>':'')+'</summary><div class="body"><ul>'+e.items.map(function(i){return '<li>'+esc(i)+'</li>'}).join('')+'</ul></div></details>'}).join('')}
+  function relList(list){return list.map(function(e){return '<details class="kb"'+(e.v===SCT.ver?' open':'')+'><summary><b>Phiên bản '+esc(SCT.label(e.v))+'</b><span class="pill muted">'+esc(e.d)+'</span>'+(e.v===SCT.ver?'<span class="pill good">Đang dùng</span>':'')+'</summary><div class="body"><ul>'+e.items.map(function(i){return '<li>'+esc(i)+'</li>'}).join('')+'</ul></div></details>'}).join('')}
   function vVersion(){
     if(!window.SCT) return head('Phiên bản và nhật ký','')+'<p class="empty">Thiếu file nhatky.js.</p>';
     var cur=SCT.changelog.filter(function(e){return e.v===SCT.ver})[0]||{d:'',items:[]};
@@ -1224,7 +1224,7 @@ details.kb li{padding:2px 0}
     if(S.seenVer!==SCT.ver){S.seenVer=SCT.ver; save()}
     SCT.markSeen(); setTimeout(renderNav,0);
     return head('Phiên bản và nhật ký','Phiên bản đang chạy, những gì đã thay đổi qua từng bản, và nhật ký sử dụng để rà soát lỗi.')+
-      '<dl class="strip"><div><dt>Phiên bản app</dt><dd>'+esc(SCT.ver)+'</dd></div><div><dt>Bản cài Android</dt><dd>'+(nat?esc(nat):'<small>Không, đang chạy trên trình duyệt</small>')+'</dd></div><div><dt>Phát hành</dt><dd>'+esc(cur.d)+'</dd></div><div><dt>Dữ liệu trong máy</dt><dd id="stoUse"><small>Đang tính…</small></dd></div></dl>'+
+      '<dl class="strip"><div><dt>Phiên bản app</dt><dd>'+esc(SCT.label(SCT.ver))+'</dd></div><div><dt>Bản cài Android</dt><dd>'+(nat?esc(nat):'<small>Không, đang chạy trên trình duyệt</small>')+'</dd></div><div><dt>Phát hành</dt><dd>'+esc(cur.d)+'</dd></div><div><dt>Dữ liệu trong máy</dt><dd id="stoUse"><small>Đang tính…</small></dd></div></dl>'+
       '<section class="panel"><h2>Có gì mới ở bản này</h2><ul style="margin:0;padding-left:20px">'+cur.items.map(function(i){return '<li style="padding:2px 0">'+esc(i)+'</li>'}).join('')+'</ul></section>'+
       '<h2 style="margin-top:22px">Ghi chú phát hành</h2>'+relList(SCT.changelog)+
       '<section class="panel" style="margin-top:22px"><h2>Nhật ký sử dụng</h2><p class="sub" style="margin-bottom:10px">Ghi lại các thao tác chính (mở app, chuyển mục, lưu, nạp file, in, xuất Word) và mọi lỗi phát sinh. Chỉ lưu trong máy này, 500 dòng gần nhất, không tự gửi đi đâu, không ghi nội dung dự án, số tiền, email hay số điện thoại. Gặp lỗi: bấm <b>Sao chép</b> rồi dán gửi cho người sửa app.</p>'+
@@ -1813,7 +1813,7 @@ details.kb li{padding:2px 0}
       if(S.view==='phien-ban'){clearTimeout(lgT); lgT=setTimeout(function(){var L=document.getElementById('lgList'); if(L) L.innerHTML=logRows()},400)}
       if(en.l==='err') setTimeout(renderNav,0);
     });
-    if(S.seenVer&&S.seenVer!==SCT.ver) setTimeout(function(){flash('Đã cập nhật lên phiên bản '+SCT.ver+'. Xem có gì mới trong Công ty › Phiên bản và nhật ký.')},1200);
+    if(S.seenVer&&S.seenVer!==SCT.ver) setTimeout(function(){flash('Đã cập nhật lên phiên bản '+SCT.label(SCT.ver)+'. Xem có gì mới trong Công ty › Phiên bản và nhật ký.')},1200);
     else if(!S.seenVer){S.seenVer=SCT.ver; save()}
   }
   render();

@@ -2,28 +2,35 @@
    Nạp trước các file khác để bắt được cả lỗi lúc khởi động.
    Nhật ký chỉ lưu trong máy (500 dòng gần nhất), không gửi đi đâu, không ghi nội dung khách hàng, số tiền, email, số điện thoại. */
 (function(){
-var APP_VER='1.3.0';
+/* Phiên bản: x.y.z (chính thức) hoặc x.y.z-beta.N (thử nghiệm, trước bản chính thức x.y.z).
+   Beta tăng dần 1 → 99; sau beta 99 thì tăng số cuối và quay về beta 1 (1.0.1-beta.99 → 1.0.2-beta.1).
+   Không quay về beta 1 của cùng số. Thứ tự: 1.0.1-beta.99 < 1.0.1 < 1.0.2-beta.1. Dùng tools/bump.py để tự nâng số. */
+var APP_VER='1.0.1-beta.1';
+function verLabel(v){return String(v).replace(/-beta\.(\d+)$/,' beta $1')}
+function vparse(v){var m=String(v).match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?/)||[]; return [+m[1]||0,+m[2]||0,+m[3]||0,m[4]!=null?+m[4]:Infinity]}
+function vcmp(a,b){var x=vparse(a),y=vparse(b); for(var i=0;i<4;i++){if(x[i]!==y[i]) return x[i]>y[i]?1:-1} return 0}
 
 /* Ghi chú phát hành, mới nhất ở trên. Mỗi lần sửa app: tăng APP_VER và thêm một mục ở đầu danh sách. */
 var CHANGELOG=[
- {v:'1.3.0',d:'02/11/2026',items:[
+ {v:'1.0.1-beta.1',d:'02/11/2026',items:[
+  'Bắt đầu đánh số phiên bản kiểu x.y.z beta N như Deep Flow: bản thử nghiệm 1.0.1 beta 1, 2, 3… trước bản chính thức 1.0.1.',
   'Thêm mục Phiên bản và nhật ký (nhóm Công ty): xem phiên bản đang chạy, ghi chú phát hành, nhật ký sử dụng.',
   'Nhật ký ghi lại các thao tác chính và mọi lỗi phát sinh, lưu trong máy, có nút Sao chép để gửi khi cần sửa lỗi.',
   'Có lỗi mới thì mục Phiên bản và nhật ký hiện dấu đỏ.',
-  'Bản cài Android 1.1: báo phiên bản lõi Android trong mục này.']},
- {v:'1.2.1',d:'02/11/2026',items:[
+  'Bản cài Android 1.0.1 beta 1: báo phiên bản bản cài trong mục này.']},
+ {v:'1.0.0-beta.4',d:'02/11/2026',items:[
   'Kiến thức: bỏ cấp Thư viện thi công, các mục (Checklist, Quy trình, Lỗi, Sự cố, Chất lượng, Nghiệm thu, Tra cứu, Nguồn) nằm thẳng trên menu.',
   'Bấm nhóm trên menu là mở luôn mục đầu của nhóm.',
   'Mở một đầu mục thì các đầu mục khác cùng danh sách tự thu gọn.',
-  'Có bản cài Android (APK) 1.0: chọn file, lưu file tải về vào Download/SoCongTruong, in hoặc lưu PDF.']},
- {v:'1.2.0',d:'02/11/2026',items:[
+  'Có bản cài Android (APK) đầu tiên: chọn file, lưu file tải về vào Download/SoCongTruong, in hoặc lưu PDF.']},
+ {v:'1.0.0-beta.3',d:'02/11/2026',items:[
   'Tra cứu tài liệu gốc: nạp file .md hoặc .zip vào trình duyệt, tìm toàn văn theo trang, đánh dấu trang đã đối chiếu bản gốc.',
   'Mục lục 3 tập Sổ tay xử lý sự cố trong mục Sự cố, bấm để mở đúng trang.']},
- {v:'1.1.0',d:'02/11/2026',items:[
+ {v:'1.0.0-beta.2',d:'02/11/2026',items:[
   'Đính kèm file cho báo giá và hợp đồng.',
   'Nhập báo giá từ file Excel.',
   'Mẫu hợp đồng Word có thẻ tự điền thông tin.']},
- {v:'1.0.0',d:'02/11/2026',items:[
+ {v:'1.0.0-beta.1',d:'02/11/2026',items:[
   'Bản đầu: quản lý dự án thiết kế và thi công, tiến độ, nhật ký, vật tư, ngân sách, phê duyệt, vấn đề.',
   'Thư viện thi công: checklist giám sát 20 giai đoạn, quy trình, lỗi thường gặp, nghiệm thu và lấy mẫu.',
   'Biểu mẫu hợp đồng, biên bản, báo giá in được.']}
@@ -67,22 +74,22 @@ window.addEventListener('unhandledrejection',function(e){
 document.addEventListener('visibilitychange',function(){log('ev',document.hidden?'↘ Vào nền':'↗ Mở lại app'); if(document.hidden) saveNow()});
 window.addEventListener('pagehide',saveNow);
 
-function nativeVer(){try{if(window.AndroidApp&&AndroidApp.version) return String(AndroidApp.version())}catch(e){} return window.AndroidApp?'1.0 (bản đầu)':''}
+function nativeVer(){try{if(window.AndroidApp&&AndroidApp.version) return verLabel(String(AndroidApp.version()).replace(/ \(.*$/,''))}catch(e){} return window.AndroidApp?'bản cài đầu tiên':''}
 function platform(){var a=(navigator.userAgent.match(/Android [\d.]+/)||[''])[0]; return (nativeVer()?'APK '+nativeVer():'Trình duyệt')+(a?' · '+a:'')}
 function seenAt(){try{return +localStorage.getItem(SEEN)||0}catch(e){return 0}}
 function markSeen(){try{localStorage.setItem(SEEN,String(Date.now()))}catch(e){}}
 function newErrors(){var s=seenAt(); return load().filter(function(e){return e.l==='err'&&e.t>s}).length}
 function fmt(t,withDate){var d=new Date(t); return d.toLocaleString('vi-VN',withDate?{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}:{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function text(filter){
-  var head='Sổ Công Trường '+APP_VER+' · '+platform()+' · '+fmt(Date.now(),true)+'\n'+navigator.userAgent;
+  var head='Sổ Công Trường '+verLabel(APP_VER)+' · '+platform()+' · '+fmt(Date.now(),true)+'\n'+navigator.userAgent;
   return head+'\n'+load().slice().reverse().filter(function(e){return filter!=='err'||e.l==='err'||e.l==='warn'}).map(function(e){
     return fmt(e.t)+' ['+e.l+'] '+e.m+(e.n>1?' (×'+e.n+')':'')+(e.x?'\n    '+e.x.replace(/\n/g,'\n    '):'');
   }).join('\n');
 }
 function clear(){buf=[]; saveNow()}
 
-window.SCT={ver:APP_VER, changelog:CHANGELOG, log:log, list:load, save:saveNow, text:text, clear:clear,
+window.SCT={ver:APP_VER, label:verLabel, vcmp:vcmp, changelog:CHANGELOG, log:log, list:load, save:saveNow, text:text, clear:clear,
   newErrors:newErrors, markSeen:markSeen, nativeVer:nativeVer, platform:platform, fmt:fmt,
   onLive:function(f){live=f}};
-log('ev','🚀 Mở app · '+APP_VER+' · '+platform());
+log('ev','🚀 Mở app · '+verLabel(APP_VER)+' · '+platform());
 })();
