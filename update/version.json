@@ -1,6 +1,6 @@
 {
-  "ver": "1.0.1-beta.3",
-  "notes": "Tự động cập nhật: mở app là tự kiểm tra bản mới trên GitHub. Bản cài Android tự tải phần giao diện mới (vài trăm KB), dùng từ lần mở sau hoặc bấm Áp dụng ngay; dữ liệu giữ nguyên.",
+  "ver": "1.0.1-beta.4",
+  "notes": "Thêm mục Nhà cung cấp và Thầu phụ (nhóm Công ty): danh bạ có nhóm hàng hoặc chuyên môn, người liên hệ, điện thoại bấm gọi được, đơn giá, điều khoản, đánh giá sao; tìm kiếm, lọc, sửa, xóa.",
   "date": "02/11/2026",
   "files": [
     "index.html",

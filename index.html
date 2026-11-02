@@ -512,7 +512,7 @@ details.kb li{padding:2px 0}
 
   /* ---------- giao diện ---------- */
   var GROUPS=[
-    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['cong-trinh','Thông tin công trình'],['khach-hang','Khách hàng']]],
+    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['cong-trinh','Thông tin công trình'],['khach-hang','Khách hàng'],['nha-cung-cap','Nhà cung cấp'],['thau-phu','Thầu phụ']]],
     ['Thiết kế','pen',[['giai-doan','Giai đoạn thiết kế'],['thiet-ke','Hồ sơ thiết kế']]],
     ['Kinh doanh và pháp lý','file',[['bao-gia','Báo giá'],['hop-dong','Hợp đồng'],['bien-ban','Biên bản'],['bieu-mau','Biểu mẫu và in']]],
     ['Thi công','brick',[['tien-do','Tiến độ'],['nhat-ky','Nhật ký'],['vat-tu','Vật tư đầu vào'],['ngan-sach','Ngân sách']]],
@@ -763,7 +763,7 @@ details.kb li{padding:2px 0}
       '<section class="panel"><h2>Thêm hợp đồng</h2><form class="f" id="contractForm">'+
       '<label for="cNo">Số hợp đồng<input type="text" id="cNo" required></label>'+
       '<label class="wide" for="cTitle">Nội dung<input type="text" id="cTitle" required></label>'+
-      '<label for="cParty">Bên đối tác<input type="text" id="cParty" required></label>'+
+      '<label for="cParty">Bên đối tác<input type="text" id="cParty" list="partyNames" required><datalist id="partyNames">'+partnerNames()+'</datalist></label>'+
       '<label for="cType">Loại<select id="cType"><option>Chủ đầu tư</option><option>Thầu phụ</option><option>Nhà cung cấp</option><option>Tư vấn</option></select></label>'+
       '<label for="cValue">Giá trị (đồng)<input type="number" id="cValue" min="0" step="1000" required></label>'+
       '<label for="cSigned">Ngày ký<input type="date" id="cSigned" value="'+TODAY+'" required></label>'+
@@ -1007,6 +1007,60 @@ details.kb li{padding:2px 0}
       '<button class="btn" type="submit">Thêm dự án</button></form></section>';
   }
 
+  /* ---------- Nhà cung cấp, thầu phụ (danh bạ dùng chung cho cả công ty) ---------- */
+  var PK={
+    ncc:{title:'Nhà cung cấp',one:'nhà cung cấp',sub:'Danh bạ nhà cung cấp vật tư, thiết bị: liên hệ, mặt hàng, điều khoản thanh toán, đánh giá. Tên ở đây được gợi ý khi nghiệm thu lô vật tư và khi thêm hợp đồng.',
+      grp:'Nhóm hàng',groups:['Vật liệu thô (cát, đá, xi măng, gạch)','Thép','Bê tông thương phẩm','Gạch ốp lát, thiết bị vệ sinh','Điện, nước','Sơn, chống thấm','Cửa, nhôm kính','Nội thất, đồ gỗ','Thiết bị, máy móc','Khác'],
+      f:[['name','Tên nhà cung cấp','text','wide',1],['grp','Nhóm hàng','grp'],['items','Mặt hàng chính','text'],['contact','Người liên hệ','text'],['phone','Điện thoại','tel'],['email','Email','text'],['addr','Địa chỉ','text','wide'],['tax','Mã số thuế','text'],['bank','Tài khoản ngân hàng','text'],['terms','Điều khoản thanh toán, giao hàng','text','wide'],['rate','Đánh giá','rate'],['note','Ghi chú','area','wide']]},
+    tp:{title:'Thầu phụ',one:'thầu phụ',sub:'Danh bạ đội thợ, thầu phụ theo chuyên môn: người phụ trách, năng lực, đơn giá tham khảo, công trình đã làm, đánh giá chất lượng và tiến độ.',
+      grp:'Chuyên môn',groups:['Phần thô (xây, trát)','Cốp pha, cốt thép, bê tông','Điện nước','Điều hòa, thông gió','Chống thấm','Ốp lát','Sơn bả','Trần, vách thạch cao','Nhôm kính, cửa','Nội thất gỗ','Cơ khí, lan can','Cảnh quan, sân vườn','Khác'],
+      f:[['name','Tên đội, công ty','text','wide',1],['grp','Chuyên môn','grp'],['contact','Người phụ trách','text'],['phone','Điện thoại','tel'],['crew','Quân số, năng lực','text'],['price','Đơn giá tham khảo','text'],['addr','Địa chỉ','text','wide'],['tax','Mã số thuế, CCCD','text'],['bank','Tài khoản ngân hàng','text'],['done','Công trình đã làm','text','wide'],['rate','Chất lượng','rate'],['rate2','Tiến độ','rate'],['note','Ghi chú','area','wide']]}
+  };
+  var pv={q:'',g:'',edit:'',arm:''};
+  function stars(n){n=+n||0; var o=''; for(var i=1;i<=5;i++) o+=i<=n?'★':'☆'; return '<span style="color:var(--warn);letter-spacing:1px" aria-label="'+n+' trên 5">'+o+'</span>'}
+  function partnerUse(x){
+    var nm=norm(x.name).trim(); if(!nm) return [];
+    var u=[], lots=(S.lots||[]).filter(function(o){return norm(o.supplier).trim()===nm}).length, ks=(S.contracts||[]).filter(function(k){return norm(k.party).trim()===nm});
+    if(lots) u.push(lots+' lô vật tư');
+    if(ks.length) u.push(ks.length+' hợp đồng ('+vnd(ks.reduce(function(a,k){return a+(k.value||0)},0))+')');
+    return u;
+  }
+  function vPartners(kind){
+    var K=PK[kind]; if(!S.partners) S.partners=[];
+    var all=S.partners.filter(function(x){return x.kind===kind});
+    var toks=norm(pv.q).split(/\s+/).filter(Boolean);
+    var list=all.filter(function(x){if(pv.g&&x.grp!==pv.g) return false; var t=norm([x.name,x.grp,x.items,x.contact,x.phone,x.addr,x.done,x.note].join(' ')); return toks.every(function(k){return t.indexOf(k)>=0})})
+      .sort(function(a,b){return (b.rate||0)-(a.rate||0)||String(a.name).localeCompare(String(b.name),'vi')});
+    var used=K.groups.filter(function(g){return all.some(function(x){return x.grp===g})});
+    var cards=list.map(function(x){
+      var u=partnerUse(x), tel=String(x.phone||'').replace(/[^0-9+]/g,'');
+      return '<article class="log"><h3>'+esc(x.name)+(x.grp?' <span class="pill muted">'+esc(x.grp)+'</span>':'')+(x.rate?' '+stars(x.rate):'')+(kind==='tp'&&x.rate2?' <small style="color:var(--muted)">Tiến độ</small> '+stars(x.rate2):'')+'</h3>'+
+        '<p>'+[x.items||x.crew?esc(x.items||x.crew):'',x.contact?'Liên hệ: '+esc(x.contact):'',tel?'<a href="tel:'+esc(tel)+'">'+esc(x.phone)+'</a>':'',x.email?esc(x.email):''].filter(Boolean).join(' · ')+'</p>'+
+        (x.addr?'<p style="color:var(--muted)">'+esc(x.addr)+'</p>':'')+
+        (x.price||x.terms?'<p>'+esc(x.price?'Đơn giá: '+x.price:'Thanh toán: '+x.terms)+'</p>':'')+
+        (x.done?'<p style="color:var(--muted)">Đã làm: '+esc(x.done)+'</p>':'')+
+        (x.note?'<p style="color:var(--muted)">'+esc(x.note)+'</p>':'')+
+        (u.length?'<p><small style="color:var(--muted)">Trong app: '+u.join(', ')+'</small></p>':'')+
+        '<p style="margin-top:6px"><button type="button" class="btn ghost sm" data-pedit="'+x.id+'">Sửa</button> <button type="button" class="btn ghost sm" data-pdel="'+x.id+'">'+(pv.arm===x.id?'Bấm lại để xóa':'Xóa')+'</button></p></article>';
+    }).join('');
+    var E=pv.edit&&S.partners.filter(function(x){return x.id===pv.edit})[0]||{};
+    var form=K.f.map(function(f){
+      var id='pt_'+f[0], v=E[f[0]]==null?'':E[f[0]], w=f[3]==='wide'?' class="wide"':'', inp;
+      if(f[2]==='grp') inp='<select id="'+id+'"><option value="">Chưa chọn</option>'+K.groups.map(function(g){return '<option'+(g===v?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select>';
+      else if(f[2]==='rate') inp='<select id="'+id+'"><option value="">Chưa đánh giá</option>'+[5,4,3,2,1].map(function(n){return '<option value="'+n+'"'+(String(n)===String(v)?' selected':'')+'>'+'★★★★★'.slice(0,n)+' ('+n+')</option>'}).join('')+'</select>';
+      else if(f[2]==='area') inp='<textarea id="'+id+'" rows="2">'+esc(v)+'</textarea>';
+      else inp='<input type="'+(f[2]==='tel'?'tel':'text')+'" id="'+id+'" value="'+esc(v)+'"'+(f[4]?' required':'')+'>';
+      return '<label'+w+' for="'+id+'">'+f[1]+inp+'</label>';
+    }).join('');
+    return head(K.title,K.sub)+
+      '<dl class="strip"><div><dt>Tổng số</dt><dd>'+all.length+'</dd></div><div><dt>Đánh giá từ 4 sao</dt><dd>'+all.filter(function(x){return +x.rate>=4}).length+'</dd></div><div><dt>'+K.grp+'</dt><dd>'+used.length+'</dd></div></dl>'+
+      '<div class="search"><label for="ptq" style="position:absolute;left:-9999px">Tìm '+K.one+'</label><input type="search" id="ptq" placeholder="Tìm theo tên, mặt hàng, người liên hệ, số điện thoại…" value="'+esc(pv.q)+'" autocomplete="off"></div>'+
+      (used.length?chips(used,pv.g,'pgrp'):'')+
+      '<section class="panel" id="ptList">'+(cards||'<p class="empty">'+(all.length?'Không có '+K.one+' khớp bộ lọc.':'Chưa có '+K.one+' nào. Thêm ở khung bên dưới.')+'</p>')+'</section>'+
+      '<section class="panel" id="ptForm"><h2>'+(E.id?'Sửa '+K.one+': '+esc(E.name):'Thêm '+K.one)+'</h2><form class="f" id="partnerForm" data-kind="'+kind+'">'+form+
+      '<div style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">'+(E.id?'Lưu thay đổi':'Thêm '+K.one)+'</button>'+(E.id?'<button type="button" class="btn ghost" data-pedit="">Hủy sửa</button>':'')+'</div></form></section>';
+  }
+  function partnerNames(kind){return (S.partners||[]).filter(function(x){return !kind||x.kind===kind}).map(function(x){return '<option value="'+esc(x.name)+'">'}).join('')}
   function vClients(){
     var rows=S.clients.map(function(c){
       var idx=CST.indexOf(c.stage), nx=CST[idx+1];
@@ -1268,7 +1322,7 @@ details.kb li{padding:2px 0}
       '<label for="lMat">Vật tư<select id="lMat">'+mOpts+'</select></label>'+
       '<label for="lDate">Ngày nhận<input type="date" id="lDate" value="'+TODAY+'" required></label>'+
       '<label for="lQty">Số lượng<input type="number" id="lQty" min="0" step="any" required></label>'+
-      '<label for="lSup">Nhà cung cấp<input type="text" id="lSup" required></label>'+
+      '<label for="lSup">Nhà cung cấp<input type="text" id="lSup" list="nccNames" required><datalist id="nccNames">'+partnerNames('ncc')+'</datalist></label>'+
       '<label for="lNo">Số lô, số phiếu giao<input type="text" id="lNo" required></label>'+
       '<div style="grid-column:1/-1;display:grid;gap:8px">'+cks+'</div>'+
       '<label for="lRes">Nếu chưa đủ tiêu chí<select id="lRes"><option value="cho">Chờ bổ sung hồ sơ</option><option value="khong-dat">Không đạt, trả hàng</option></select></label>'+
@@ -1335,7 +1389,7 @@ details.kb li{padding:2px 0}
     S.setLast=id;
     return '<div class="settabs"><span class="sett">'+ic('gear')+'Cài đặt</span><div class="tabs" style="margin:0">'+SETTINGS.map(function(x){return '<button type="button" class="btn ghost sm" data-view="'+x[0]+'" aria-pressed="'+(S.view===x[0])+'">'+x[1]+itemBadge(x[0]==='phien-ban'?'phien-ban':'')+'</button>'}).join('')+'</div></div>'+fn();
   }}
-  var RENDER={'cong-trinh':vSite,'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  var RENDER={'nha-cung-cap':function(){return vPartners('ncc')},'thau-phu':function(){return vPartners('tp')},'cong-trinh':vSite,'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
   LTABS.forEach(function(t){RENDER['tv-'+t[0]]=function(){lib.tab=t[0]; return vLibrary()}});
   function libGo(tab){
     if(S.view!=='tv-'+tab){lib.open=''; lib.grp=''; lib.area=''}
@@ -1353,6 +1407,7 @@ details.kb li{padding:2px 0}
    for(var i=0;i<GROUPS.length;i++){for(var j=0;j<GROUPS[i][2].length;j++){if(GROUPS[i][2][j][0]===v) return GROUPS[i][0]+' › '+GROUPS[i][2][j][1]}} return v}
   function go(v){
     if(v!==S.view&&window.SCT) SCT.log('ev','Mở mục '+navName(v));
+    if(v!==S.view&&(v==='nha-cung-cap'||v==='thau-phu')){pv.q=''; pv.g=''; pv.edit=''; pv.arm=''}
     if(v!==S.view&&v.indexOf('tv-')===0){lib.open=''; lib.grp=''; lib.area=''; lib.q=''}
     S.view=v; save(); render();
     try{ history.replaceState(null,'','#'+v) }catch(e){}
@@ -1708,6 +1763,14 @@ details.kb li{padding:2px 0}
       else if(ua==='close'){var bb=document.getElementById('updBar'); if(bb) bb.remove()}
       else if(ua==='reset'&&window.AndroidApp&&AndroidApp.webReset) AndroidApp.webReset();
       return}
+    var pe=e.target.closest('[data-pedit]');
+    if(pe){pv.edit=pe.getAttribute('data-pedit'); pv.arm=''; render(); var pf=document.getElementById(pv.edit?'ptForm':'ptList'); if(pf) pf.scrollIntoView(); return}
+    var pdl=e.target.closest('[data-pdel]');
+    if(pdl){var pid=pdl.getAttribute('data-pdel');
+      if(pv.arm===pid){var gone=(S.partners||[]).filter(function(x){return x.id===pid})[0]; S.partners=S.partners.filter(function(x){return x.id!==pid}); pv.arm=''; if(pv.edit===pid) pv.edit=''; save(); if(gone&&window.SCT) SCT.log('ev','Xóa '+(gone.kind==='tp'?'thầu phụ':'nhà cung cấp'))}
+      else{pv.arm=pid; setTimeout(function(){if(pv.arm===pid){pv.arm=''; if(S.view==='nha-cung-cap'||S.view==='thau-phu'){var y=window.scrollY; render(); window.scrollTo(0,y)}}},3500)}
+      var y0=window.scrollY; render(); window.scrollTo(0,y0); return}
+    var pg=e.target.closest('[data-pgrp]'); if(pg){pv.g=pg.getAttribute('data-pgrp'); var y1=window.scrollY; render(); window.scrollTo(0,y1); return}
     var lgf=e.target.closest('[data-lgf]'); if(lgf){vl.f=lgf.getAttribute('data-lgf'); render(); return}
     var lga=e.target.closest('[data-lgact]');
     if(lga){
@@ -1803,6 +1866,7 @@ details.kb li{padding:2px 0}
   document.addEventListener('input',function(e){
     if(fileInput(e)) return;
     if(e.target.getAttribute&&e.target.getAttribute('data-ct')){ctInput(e.target); return}
+    if(e.target.id==='ptq'){pv.q=e.target.value; var sel=e.target.selectionStart; render(); var q2=document.getElementById('ptq'); if(q2){q2.focus(); try{q2.setSelectionRange(sel,sel)}catch(x){}} return}
     if(e.target.id==='kbq'){lib.q=e.target.value; var b=document.getElementById('kbBody'); if(b) b.innerHTML=libBody(); var t=document.querySelectorAll('[data-ltab]'); for(var i=0;i<t.length;i++) t[i].setAttribute('aria-pressed',(!lib.q&&t[i].getAttribute('data-ltab')===lib.tab)?'true':'false'); return}
     if(e.target.id==='smQty') calcSamples();
     var tg=e.target;
@@ -1885,6 +1949,13 @@ details.kb li{padding:2px 0}
     }else if(f==='qitemForm'){
       var qq=S.quotes.filter(function(q){return q.id===g('zQ')})[0]; if(!qq) return;
       qq.items.push({id:nid('z'),name:g('zName').trim(),unit:g('zUnit').trim(),qty:parseFloat(g('zQty'))||0,price:parseFloat(g('zPrice'))||0});
+    }else if(f==='partnerForm'){
+      var kd=e.target.getAttribute('data-kind'), KK=PK[kd]; if(!S.partners) S.partners=[];
+      var rec=pv.edit&&S.partners.filter(function(x){return x.id===pv.edit})[0];
+      if(!rec){rec={id:nid('n'),kind:kd,created:TODAY}; S.partners.push(rec)}
+      KK.f.forEach(function(fd){var v=g('pt_'+fd[0]).trim(); if(v==='') delete rec[fd[0]]; else rec[fd[0]]=fd[2]==='rate'?+v:v});
+      if(window.SCT) SCT.log('ev',(pv.edit?'Sửa ':'Thêm ')+KK.one);
+      pv.edit=''; save(); render(); flash('Đã lưu '+KK.one+' '+rec.name+'.'); return;
     }else if(f==='guideForm'){
       S.guides.push({id:nid('g'),cat:g('gCat'),title:g('gTitle').trim(),steps:g('gSteps').split('\n').map(function(x){return x.trim()}).filter(Boolean),criteria:g('gCrit').trim(),mats:g('gMats').trim()});
     }else if(f==='lotForm'){
