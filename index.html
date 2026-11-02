@@ -157,6 +157,7 @@ form.f label.wide{grid-column:1/-1}
 form.f label input,form.f label select{color:var(--ink); width:100%}
 .btn{background:var(--accent); color:var(--accent-ink); border:0; border-radius:6px; padding:8px 14px; font-weight:600; cursor:pointer}
 .btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45; cursor:default; filter:none}
 .btn.ghost{background:none; border:1px solid var(--line); color:var(--ink); font-weight:500}
 .btn.sm{padding:4px 10px; font-size:13px}
 .btn.bad{background:var(--bad); color:#fff}
@@ -265,6 +266,7 @@ details.kb li{padding:2px 0}
 <script src="kb2.js"></script>
 <script src="forms.js"></script>
 <script src="files.js"></script>
+<script src="muahang.js"></script>
 <script src="tracuu.js"></script>
 <script src="toc.js"></script>
 <script>
@@ -1384,18 +1386,19 @@ details.kb li{padding:2px 0}
     function show(total){el.innerHTML=fsize(total)+'<small> tổng</small>'}
     try{navigator.storage.estimate().then(function(r){show(Math.max(r.usage||0,ls))},function(){show(ls)})}catch(e){show(ls)}
   }
-  var SETTINGS=[['cong-ty-info','Thông tin công ty'],['phien-ban','Phiên bản và nhật ký']];
+  var SETTINGS=[['cong-ty-info','Thông tin công ty'],['cai-dat-ai','Trợ lý AI'],['phien-ban','Phiên bản và nhật ký']];
   function inSettings(fn,id){return function(){
     S.setLast=id;
     return '<div class="settabs"><span class="sett">'+ic('gear')+'Cài đặt</span><div class="tabs" style="margin:0">'+SETTINGS.map(function(x){return '<button type="button" class="btn ghost sm" data-view="'+x[0]+'" aria-pressed="'+(S.view===x[0])+'">'+x[1]+itemBadge(x[0]==='phien-ban'?'phien-ban':'')+'</button>'}).join('')+'</div></div>'+fn();
   }}
-  var RENDER={'nha-cung-cap':function(){return vPartners('ncc')},'thau-phu':function(){return vPartners('tp')},'cong-trinh':vSite,'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  var RENDER={'nha-cung-cap':function(){return window.MH?MH.view():vPartners('ncc')},'cai-dat-ai':inSettings(function(){return window.MH?MH.vAI():''},'cai-dat-ai'),'thau-phu':function(){return vPartners('tp')},'cong-trinh':vSite,'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
   LTABS.forEach(function(t){RENDER['tv-'+t[0]]=function(){lib.tab=t[0]; return vLibrary()}});
   function libGo(tab){
     if(S.view!=='tv-'+tab){lib.open=''; lib.grp=''; lib.area=''}
     lib.tab=tab; S.view='tv-'+tab; save();
     try{ history.replaceState(null,'','#'+S.view) }catch(e){}
   }
+  window.SCTAPP={get S(){return S}, save:function(){save()}, render:function(){render()}, esc:esc, vnd:vnd, nid:nid, flash:function(m){flash(m)}, proj:function(){return proj()}, head:head, short:short, fsize:function(n){return fsize(n)}, fmtD:fmtD, TODAY:TODAY, norm:function(x){return norm(x)}, vPartners:function(k){return vPartners(k)}, view:function(){return S.view}};
   function render(){
     if(S.view==='huong-dan') S.view='tv-'+(lib.tab||'checklist');
     if(!RENDER[S.view]) S.view='tong-quan';
@@ -1816,7 +1819,7 @@ details.kb li{padding:2px 0}
       }
       save(); var top1=window.scrollY; render(); window.scrollTo(0,top1); return}
     var pk=e.target.closest('[data-pick]');
-    if(pk){S.pid=pk.getAttribute('data-pick'); S.view='tong-quan'; save(); render(); window.scrollTo(0,0); return}
+    if(pk){if(window.MH) MH.reset(); S.pid=pk.getAttribute('data-pick'); S.view='tong-quan'; save(); render(); window.scrollTo(0,0); return}
     var ckb=e.target.closest('[data-chk]');
     if(ckb){S.deliv.forEach(function(d){if(d.id===ckb.getAttribute('data-chk')) d.done=!d.done}); save(); render(); return}
     var cs=e.target.closest('[data-stage]');
@@ -1884,7 +1887,7 @@ details.kb li{padding:2px 0}
       var fl=e.target.files&&e.target.files[0]; if(!fl) return;
       if(fl.size>300*1024){alert_msg('coMsg','Logo lớn hơn 300 KB, hãy chọn ảnh nhỏ hơn.'); return}
       var rd=new FileReader(); rd.onload=function(){S.company=S.company||{}; S.company.logo=rd.result; save(); render()}; rd.readAsDataURL(fl); return}
-    if(e.target.id==='projSel'){S.pid=e.target.value; save(); render(); return}
+    if(e.target.id==='projSel'){S.pid=e.target.value; if(window.MH) MH.reset(); save(); render(); return}
     if(e.target.id==='fMin'){fMin=e.target.value; render(); return}
     if(e.target.id==='fDoc'){fDoc=e.target.value; render(); return}
     if(e.target.id==='fGuide'){fGuide=e.target.value; render(); return}

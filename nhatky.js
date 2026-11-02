@@ -5,13 +5,20 @@
 /* Phiên bản: x.y.z (chính thức) hoặc x.y.z-beta.N (thử nghiệm, trước bản chính thức x.y.z).
    Beta tăng dần 1 → 99; sau beta 99 thì tăng số cuối và quay về beta 1 (1.0.1-beta.99 → 1.0.2-beta.1).
    Không quay về beta 1 của cùng số. Thứ tự: 1.0.1-beta.99 < 1.0.1 < 1.0.2-beta.1. Dùng tools/bump.py để tự nâng số. */
-var APP_VER='1.0.1-beta.4';
+var APP_VER='1.0.1-beta.5';
 function verLabel(v){return String(v).replace(/-beta\.(\d+)$/,' beta $1')}
 function vparse(v){var m=String(v).match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?/)||[]; return [+m[1]||0,+m[2]||0,+m[3]||0,m[4]!=null?+m[4]:Infinity]}
 function vcmp(a,b){var x=vparse(a),y=vparse(b); for(var i=0;i<4;i++){if(x[i]!==y[i]) return x[i]>y[i]?1:-1} return 0}
 
 /* Ghi chú phát hành, mới nhất ở trên. Mỗi lần sửa app: tăng APP_VER và thêm một mục ở đầu danh sách. */
 var CHANGELOG=[
+ {v:"1.0.1-beta.5",d:"02/11/2026",items:[
+  "Nhà cung cấp theo từng công trình: mỗi công trình có danh sách nhà cung cấp riêng, xem tổng đã mua, đã trả, còn nợ; thẻ Danh bạ công ty giữ danh bạ chung.",
+  "Bảng giá từng nhà cung cấp: giá hiện hành, giá trước, % thay đổi, ngày áp dụng, lịch sử giá, khối lượng đã mua; tìm kiếm, xuất Excel (CSV).",
+  "Chèn ảnh chụp (chụp thẳng bằng camera), PDF, Excel, CSV báo giá hoặc phiếu giao hàng; AI (Gemini hoặc Claude) đọc và tổng hợp nhiều tệp thành một bảng để kiểm tra, sửa rồi lưu. File Excel đọc trực tiếp được không cần AI.",
+  "Mua hàng: phiếu mua theo ngày, số phiếu, VAT, chọn mặt hàng từ bảng giá tự điền ĐVT và đơn giá theo ngày; bảng tổng khối lượng đã mua theo mặt hàng.",
+  "Thanh toán: ghi từng lần (lần 1, 2, 3…), hình thức, chứng từ; sổ công nợ theo thời gian.",
+  "Cài đặt › Trợ lý AI: chọn Gemini hoặc Claude, nhập khóa API (chỉ lưu trong máy), thử kết nối."]},
  {v:"1.0.1-beta.4",d:"02/11/2026",items:[
   "Thêm mục Nhà cung cấp và Thầu phụ (nhóm Công ty): danh bạ có nhóm hàng hoặc chuyên môn, người liên hệ, điện thoại bấm gọi được, đơn giá, điều khoản, đánh giá sao; tìm kiếm, lọc, sửa, xóa.",
   "Ô Nhà cung cấp khi nghiệm thu lô vật tư và ô Bên đối tác khi thêm hợp đồng gợi ý tên từ danh bạ; mỗi đối tác hiện số lô vật tư và hợp đồng đã ghi trong app."]},

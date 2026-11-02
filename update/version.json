@@ -1,6 +1,6 @@
 {
-  "ver": "1.0.1-beta.4",
-  "notes": "Thêm mục Nhà cung cấp và Thầu phụ (nhóm Công ty): danh bạ có nhóm hàng hoặc chuyên môn, người liên hệ, điện thoại bấm gọi được, đơn giá, điều khoản, đánh giá sao; tìm kiếm, lọc, sửa, xóa.",
+  "ver": "1.0.1-beta.5",
+  "notes": "Nhà cung cấp theo từng công trình: mỗi công trình có danh sách nhà cung cấp riêng, xem tổng đã mua, đã trả, còn nợ; thẻ Danh bạ công ty giữ danh bạ chung.",
   "date": "02/11/2026",
   "files": [
     "index.html",
@@ -9,14 +9,15 @@
     "kb2.js",
     "forms.js",
     "files.js",
+    "muahang.js",
     "tracuu.js",
     "toc.js",
     "manifest.json"
   ],
   "minApk": 5,
   "apk": {
-    "versionCode": 5,
-    "versionName": "1.0.1-beta.3",
+    "versionCode": 6,
+    "versionName": "1.0.1-beta.4",
     "url": "https://raw.githubusercontent.com/quyetphamkts-cmd/Quan-ly-thiet-ke-xay-dung/main/update/SoCongTruong.apk"
   }
 }
