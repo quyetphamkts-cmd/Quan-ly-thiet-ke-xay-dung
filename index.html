@@ -53,6 +53,15 @@ body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-in
   border-bottom:1px solid var(--line); display:flex; gap:12px 20px; align-items:center; flex-wrap:wrap;
 }
 .brand{font:700 22px/1 var(--display); letter-spacing:.06em; text-transform:uppercase; margin-right:auto}
+.gear{order:9; position:relative; flex:none; width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; background:var(--surface); color:var(--ink); cursor:pointer; padding:0}
+.gear:hover{border-color:var(--accent); color:var(--accent)}
+.gear[aria-current=page]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.gear svg.ic{width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.gear .count{position:absolute; top:-5px; right:-7px; font-size:10px; line-height:16px; min-width:16px; padding:0 5px}
+.settabs{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid var(--line)}
+.sett{display:flex; align-items:center; gap:6px; font:700 15px/1 var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.sett svg.ic{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8}
+.settabs .count{margin-left:6px}
 .brand small{display:block; font:400 11px/1.3 var(--body); letter-spacing:0; text-transform:none; color:var(--muted); margin-top:3px}
 .top label{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; min-width:0}
 select,input,textarea,button{font:inherit; color:inherit}
@@ -161,6 +170,7 @@ form.f label input,form.f label select{color:var(--ink); width:100%}
 .empty{color:var(--muted); padding:8px 0}
 .note{font-size:12px; color:var(--muted); margin-top:18px; max-width:70ch}
 @media (max-width:760px){
+  .top .brand{order:1} .top .gear{order:2} .top>label,.top>#resetBtn{order:3}
   .layout{grid-template-columns:minmax(0,1fr); gap:12px; margin-top:12px}
   .nav{position:static; max-height:none; overflow:visible}
   .acc{display:none}
@@ -241,6 +251,7 @@ details.kb li{padding:2px 0}
     <select id="projSel"></select>
   </label>
   <button class="btn ghost sm" id="resetBtn" type="button">Đặt lại dữ liệu mẫu</button>
+  <button class="gear" id="gearBtn" type="button" aria-label="Cài đặt: thông tin công ty, phiên bản và nhật ký" title="Cài đặt"></button>
 </div>
 <div class="layout">
   <nav class="nav" id="nav" aria-label="Các mục"></nav>
@@ -499,7 +510,7 @@ details.kb li{padding:2px 0}
 
   /* ---------- giao diện ---------- */
   var GROUPS=[
-    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['khach-hang','Khách hàng'],['cong-ty-info','Thông tin công ty'],['phien-ban','Phiên bản và nhật ký']]],
+    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['khach-hang','Khách hàng']]],
     ['Thiết kế','pen',[['giai-doan','Giai đoạn thiết kế'],['thiet-ke','Hồ sơ thiết kế']]],
     ['Kinh doanh và pháp lý','file',[['bao-gia','Báo giá'],['hop-dong','Hợp đồng'],['bien-ban','Biên bản'],['bieu-mau','Biểu mẫu và in']]],
     ['Thi công','brick',[['tien-do','Tiến độ'],['nhat-ky','Nhật ký'],['vat-tu','Vật tư đầu vào'],['ngan-sach','Ngân sách']]],
@@ -513,11 +524,12 @@ details.kb li{padding:2px 0}
     brick:'<path d="M3 5h18v14H3zM3 12h18M9 5v7M15 12v7"/>',
     check:'<path d="M9 11l3 3 8-8M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h9"/>',
     book:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5zM4 19.5A2.5 2.5 0 006.5 22H20v-5"/>',
-    chev:'<path d="M9 6l6 6-6 6"/>'
+    chev:'<path d="M9 6l6 6-6 6"/>',
+    gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'
   };
   function ic(n,cls){return '<svg class="ic'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>'}
   var navG=null, navGView='';
-  function groupOf(v){for(var i=0;i<GROUPS.length;i++){if(GROUPS[i][2].some(function(x){return x[0]===v})) return i} return 0}
+  function groupOf(v){for(var i=0;i<GROUPS.length;i++){if(GROUPS[i][2].some(function(x){return x[0]===v})) return i} return -1}
   function openIssues(){return S.issues.filter(function(i){return i.pid===S.pid&&i.status!=='dong'}).length}
   function itemBadge(id){
     if(id==='phe-duyet'&&pending()) return '<span class="count">'+pending()+'</span>';
@@ -539,8 +551,11 @@ details.kb li{padding:2px 0}
     }).join('')+'</div>';
     var m2='<div class="m2"><div class="mg">'+GROUPS.map(function(g,i){
       return '<button type="button" data-mgroup="'+i+'" aria-pressed="'+(i===mg)+'">'+ic(g[1])+g[0]+groupBadge(g)+'</button>';
-    }).join('')+'</div><div class="mi">'+navItems(GROUPS[mg])+'</div></div>';
+    }).join('')+'</div>'+(mg<0?'':'<div class="mi">'+navItems(GROUPS[mg])+'</div>')+'</div>';
     $('#nav').innerHTML=acc+m2;
+    var gb=document.getElementById('gearBtn');
+    if(gb){var on=SETTINGS.some(function(x){return x[0]===S.view}); if(on) gb.setAttribute('aria-current','page'); else gb.removeAttribute('aria-current');
+      var bd=itemBadge('phien-ban'); gb.innerHTML=ic('gear')+(bd?bd.replace('class="count','class="count gb'):'')}
     [['.mg [aria-pressed=true]','.mg'],['.mi [aria-current=page]','.mi']].forEach(function(p){
       var el=$(p[0]), box=$(p[1]); if(!el||!box||!box.offsetParent) return;
       var r=el.getBoundingClientRect(), c=box.getBoundingClientRect();
@@ -1237,7 +1252,12 @@ details.kb li{padding:2px 0}
     function show(total){el.innerHTML=fsize(total)+'<small> tổng</small>'}
     try{navigator.storage.estimate().then(function(r){show(Math.max(r.usage||0,ls))},function(){show(ls)})}catch(e){show(ls)}
   }
-  var RENDER={'phien-ban':vVersion,'cong-ty-info':vCompany,'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  var SETTINGS=[['cong-ty-info','Thông tin công ty'],['phien-ban','Phiên bản và nhật ký']];
+  function inSettings(fn,id){return function(){
+    S.setLast=id;
+    return '<div class="settabs"><span class="sett">'+ic('gear')+'Cài đặt</span><div class="tabs" style="margin:0">'+SETTINGS.map(function(x){return '<button type="button" class="btn ghost sm" data-view="'+x[0]+'" aria-pressed="'+(S.view===x[0])+'">'+x[1]+itemBadge(x[0]==='phien-ban'?'phien-ban':'')+'</button>'}).join('')+'</div></div>'+fn();
+  }}
+  var RENDER={'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
   LTABS.forEach(function(t){RENDER['tv-'+t[0]]=function(){lib.tab=t[0]; return vLibrary()}});
   function libGo(tab){
     if(S.view!=='tv-'+tab){lib.open=''; lib.grp=''; lib.area=''}
@@ -1251,7 +1271,8 @@ details.kb li{padding:2px 0}
     $('#view').innerHTML=RENDER[S.view]()+
       ''+(S.view==='phien-ban'?(setTimeout(storageUse,0),''):'')+'<p class="note">Dữ liệu trong trang là ví dụ. Mọi thay đổi chỉ lưu trong trình duyệt này, không gửi đi đâu và không đồng bộ giữa các thiết bị.</p>';
   }
-  function navName(v){for(var i=0;i<GROUPS.length;i++){for(var j=0;j<GROUPS[i][2].length;j++){if(GROUPS[i][2][j][0]===v) return GROUPS[i][0]+' › '+GROUPS[i][2][j][1]}} return v}
+  function navName(v){var st=(typeof SETTINGS!=='undefined')&&SETTINGS.filter(function(x){return x[0]===v})[0]; if(st) return 'Cài đặt › '+st[1];
+   for(var i=0;i<GROUPS.length;i++){for(var j=0;j<GROUPS[i][2].length;j++){if(GROUPS[i][2][j][0]===v) return GROUPS[i][0]+' › '+GROUPS[i][2][j][1]}} return v}
   function go(v){
     if(v!==S.view&&window.SCT) SCT.log('ev','Mở mục '+navName(v));
     if(v!==S.view&&v.indexOf('tv-')===0){lib.open=''; lib.grp=''; lib.area=''; lib.q=''}
@@ -1601,6 +1622,7 @@ details.kb li{padding:2px 0}
   document.addEventListener('click',function(e){
     if(fileClick(e)) return;
     var b=e.target.closest('[data-view]'); if(b){go(b.getAttribute('data-view')); return}
+    if(e.target.closest('#gearBtn')){var inS=SETTINGS.some(function(x){return x[0]===S.view}); if(!inS) go(window.SCT&&SCT.newErrors()?'phien-ban':(S.setLast||'cong-ty-info')); return}
     var lgf=e.target.closest('[data-lgf]'); if(lgf){vl.f=lgf.getAttribute('data-lgf'); render(); return}
     var lga=e.target.closest('[data-lgact]');
     if(lga){
@@ -1813,7 +1835,7 @@ details.kb li{padding:2px 0}
       if(S.view==='phien-ban'){clearTimeout(lgT); lgT=setTimeout(function(){var L=document.getElementById('lgList'); if(L) L.innerHTML=logRows()},400)}
       if(en.l==='err') setTimeout(renderNav,0);
     });
-    if(S.seenVer&&S.seenVer!==SCT.ver) setTimeout(function(){flash('Đã cập nhật lên phiên bản '+SCT.label(SCT.ver)+'. Xem có gì mới trong Công ty › Phiên bản và nhật ký.')},1200);
+    if(S.seenVer&&S.seenVer!==SCT.ver) setTimeout(function(){flash('Đã cập nhật lên phiên bản '+SCT.label(SCT.ver)+'. Xem có gì mới ở nút Cài đặt (bánh răng góc trên bên phải).')},1200);
     else if(!S.seenVer){S.seenVer=SCT.ver; save()}
   }
   render();
