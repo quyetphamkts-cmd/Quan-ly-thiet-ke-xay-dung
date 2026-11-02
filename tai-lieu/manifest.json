@@ -1,0 +1,94 @@
+[
+  {
+    "id": "DOC01",
+    "source": "4. ST-13. Nghiep vu QA.QC cong truong.pdf",
+    "sha256": "0e38771571d3767a8b95b002922bdaecd594f1868c3dbedc1b7122be2ad191d6",
+    "pages": 40,
+    "output": "01_4_ST_13_Nghiep_vu_QA_QC_cong_truong.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": []
+  },
+  {
+    "id": "DOC02",
+    "source": "Quản lý dự án - Cẩm nang quản lý hiệu quả.pdf",
+    "sha256": "97db62bd7c913cd5e541127600e3d9a89cc2c067770de2232d3224e7042de391",
+    "pages": 72,
+    "output": "02_Quan_ly_du_an_Cam_nang_quan_ly_hieu_qua.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": [
+      2
+    ]
+  },
+  {
+    "id": "DOC03",
+    "source": "So tay xu ly su co cong trinh XD_Tap 1.pdf",
+    "sha256": "d2ff04b85d39ac8ff1595b3c9a2cd0170352361fcc40bd7e64c006d30627b47b",
+    "pages": 386,
+    "output": "03_So_tay_xu_ly_su_co_cong_trinh_XD_Tap_1.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": []
+  },
+  {
+    "id": "DOC04",
+    "source": "So tay xu ly su co cong trinh XD_Tap 2.pdf",
+    "sha256": "efe49ecc013e82ab5a66a27a07aa3572f0551e953b4fbaf55ac66a0ba048486c",
+    "pages": 304,
+    "output": "04_So_tay_xu_ly_su_co_cong_trinh_XD_Tap_2.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": [
+      304
+    ]
+  },
+  {
+    "id": "DOC05",
+    "source": "So tay xu ly su co cong trinh XD_Tap 3.pdf",
+    "sha256": "cb5c1bc38f10e0bdec455f4cd0c9592be8734f93b1a144005f46623387a90a15",
+    "pages": 309,
+    "output": "05_So_tay_xu_ly_su_co_cong_trinh_XD_Tap_3.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": []
+  },
+  {
+    "id": "DOC06",
+    "source": "Thuyết minh BPKT thi công lắp dựng Cửa gỗ - Đã duyệt_1.pdf",
+    "sha256": "4c92353c0497cb8d022141645f438403c21933c8e5ec95dafbfe33debd6d9466",
+    "pages": 17,
+    "output": "06_Thuyet_minh_BPKT_thi_cong_lap_dung_Cua_go_a_duyet_1.md",
+    "method": "tesseract_eng_220dpi",
+    "status": "provisional_unverified_language_mismatch",
+    "low_text_pages": []
+  },
+  {
+    "id": "SOURCE07",
+    "source": "2017.10.01_LVL_06. BPTC coc khoan nhoi.dwg",
+    "sha256": "fa102d6f2c4b987cb64c2883f44006022360832506c4c7bce91728a31963448e",
+    "method": "not_extracted",
+    "status": "unread"
+  },
+  {
+    "id": "SOURCE08",
+    "source": "20171121_BIEN PHAP COC NHOI - TUONG VAY.dwg",
+    "sha256": "1d7d6c16c11d73ccd53dab8bb836d0236205a18dbb15cbafabab439558ab78f8",
+    "method": "not_extracted",
+    "status": "unread"
+  },
+  {
+    "id": "SOURCE09",
+    "source": "May moc, thiet bi - Q.An.doc",
+    "sha256": "c1414bccf1769fd50495613993b0c26a28d74d53a93ad7e4af4de8247d2209f1",
+    "method": "word_xml",
+    "status": "text_and_tables_extracted_images_preserved_not_ocr"
+  },
+  {
+    "id": "SOURCE10",
+    "source": "Thuyet minh BPTC-coc đại trà + tg vây.docx",
+    "sha256": "dba2a0c936f965a47ff8cbb2d1f9e57843dc67ad021de6b78c9bf58fd9212ecc",
+    "method": "word_xml",
+    "status": "text_and_tables_extracted_images_preserved_not_ocr"
+  }
+]
