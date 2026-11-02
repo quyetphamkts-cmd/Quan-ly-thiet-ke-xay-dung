@@ -498,7 +498,7 @@ details.kb li{padding:2px 0}
     ['Kinh doanh và pháp lý','file',[['bao-gia','Báo giá'],['hop-dong','Hợp đồng'],['bien-ban','Biên bản'],['bieu-mau','Biểu mẫu và in']]],
     ['Thi công','brick',[['tien-do','Tiến độ'],['nhat-ky','Nhật ký'],['vat-tu','Vật tư đầu vào'],['ngan-sach','Ngân sách']]],
     ['Điều hành','check',[['phe-duyet','Phê duyệt'],['van-de','Vấn đề']]],
-    ['Kiến thức','book',[['huong-dan','Thư viện thi công']]]
+    ['Kiến thức','book',[['tv-checklist','Checklist giám sát'],['tv-quy-trinh','Quy trình thi công'],['tv-loi','Lỗi thường gặp'],['tv-su-co','Sự cố'],['tv-qa','Quản lý chất lượng'],['tv-nghiem-thu','Nghiệm thu và lấy mẫu'],['tv-cong-ty','Của công ty'],['tv-tra-cuu','Tra cứu tài liệu gốc'],['tv-nguon','Tài liệu nguồn']]]
   ];
   var ICON={
     building:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M9 17h6"/>',
@@ -527,7 +527,7 @@ details.kb li{padding:2px 0}
     var cur=groupOf(S.view), mg=navG==null?cur:navG;
     if(!S.navOpen) S.navOpen={};
     var acc='<div class="acc">'+GROUPS.map(function(g,i){
-      var open=i===cur||!!S.navOpen[i];
+      var open=i===cur;
       return '<button type="button" class="gh'+(i===cur?' cur':'')+'" data-ngroup="'+i+'" aria-expanded="'+open+'">'+ic(g[1])+'<span class="gt">'+g[0]+'</span>'+(open?'':groupBadge(g))+ic('chev','chev')+'</button>'+(open?'<div class="gi">'+navItems(g)+'</div>':'');
     }).join('')+'</div>';
     var m2='<div class="m2"><div class="mg">'+GROUPS.map(function(g,i){
@@ -1161,9 +1161,9 @@ details.kb li{padding:2px 0}
     return libSources();
   }
   function vLibrary(){
-    var tabs='<div class="tabs" role="tablist">'+LTABS.map(function(t){return '<button type="button" class="btn ghost sm" data-ltab="'+t[0]+'" aria-pressed="'+(lib.tab===t[0]&&!lib.q)+'">'+t[1]+'</button>'}).join('')+'</div>';
-    return head('Thư viện thi công','Quy trình, checklist giám sát, lỗi thường gặp, sự cố và tiêu chí nghiệm thu dùng chung cho cả công ty.')+
-      '<div class="search"><label for="kbq" style="position:absolute;left:-9999px">Tìm kiếm trong thư viện</label><input type="search" id="kbq" placeholder="Tìm: chống thấm, ốp lát, cọc nhồi, thép chờ, độ ẩm tường…" value="'+esc(lib.q)+'" autocomplete="off"></div>'+tabs+'<div id="kbBody">'+libBody()+'</div>';
+    var tabs='';
+    return head(tabName(lib.tab)||'Kiến thức','Kiến thức thi công dùng chung cho cả công ty. Ô tìm kiếm tra trong toàn bộ các mục Kiến thức.')+
+      '<div class="search"><label for="kbq" style="position:absolute;left:-9999px">Tìm kiếm trong thư viện</label><input type="search" id="kbq" placeholder="Tìm trong Kiến thức: chống thấm, ốp lát, cọc nhồi, thép chờ, độ ẩm tường…" value="'+esc(lib.q)+'" autocomplete="off"></div>'+tabs+'<div id="kbBody">'+libBody()+'</div>';
   }
   function samplingFor(name){
     var n=String(name).toLowerCase(), best=null, bp=1e9;
@@ -1197,14 +1197,22 @@ details.kb li{padding:2px 0}
       '<button class="btn" type="submit">Lưu kết quả nghiệm thu</button></form></section>':'');
   }
 
-  var RENDER={'cong-ty-info':vCompany,'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'huong-dan':vLibrary,'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  var RENDER={'cong-ty-info':vCompany,'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  LTABS.forEach(function(t){RENDER['tv-'+t[0]]=function(){lib.tab=t[0]; return vLibrary()}});
+  function libGo(tab){
+    if(S.view!=='tv-'+tab){lib.open=''; lib.grp=''; lib.area=''}
+    lib.tab=tab; S.view='tv-'+tab; save();
+    try{ history.replaceState(null,'','#'+S.view) }catch(e){}
+  }
   function render(){
+    if(S.view==='huong-dan') S.view='tv-'+(lib.tab||'checklist');
     if(!RENDER[S.view]) S.view='tong-quan';
     renderNav(); renderProj();
     $('#view').innerHTML=RENDER[S.view]()+
       '<p class="note">Dữ liệu trong trang là ví dụ. Mọi thay đổi chỉ lưu trong trình duyệt này, không gửi đi đâu và không đồng bộ giữa các thiết bị.</p>';
   }
   function go(v){
+    if(v!==S.view&&v.indexOf('tv-')===0){lib.open=''; lib.grp=''; lib.area=''; lib.q=''}
     S.view=v; save(); render();
     try{ history.replaceState(null,'','#'+v) }catch(e){}
     window.scrollTo(0,0);
@@ -1534,7 +1542,7 @@ details.kb li{padding:2px 0}
       var a=b.getAttribute('data-tropen').split('|');
       if(!S.tl||!S.tl.some(function(m){return m.id===a[0]})){flash('Chưa nạp tập này. Hãy nạp file ở phần trên.'); return true}
       var d=TRACUU.cache[a[0]]; if(d&&!d.pages.some(function(p){return p.n===parseInt(a[1],10)})){flash('Không có trang '+a[1]+' trong bản đã nạp.'); return true}
-      lib.tab='tra-cuu'; tr.open={id:a[0],n:parseInt(a[1],10)};
+      libGo('tra-cuu'); tr.open={id:a[0],n:parseInt(a[1],10)};
       if(document.getElementById('trRes')){trRefresh()} else render();
       var rs=document.getElementById('trRes'); if(rs) rs.scrollIntoView(); return true;
     }
@@ -1559,20 +1567,20 @@ details.kb li{padding:2px 0}
     var is=e.target.closest('[data-iss]');
     if(is){var nx={mo:'xu-ly','xu-ly':'dong',dong:'mo'}; S.issues.forEach(function(i){if(i.id===is.getAttribute('data-iss')) i.status=nx[i.status]}); save(); render(); return}
     var ng=e.target.closest('[data-ngroup]');
-    if(ng){var gi=parseInt(ng.getAttribute('data-ngroup'),10); if(!S.navOpen) S.navOpen={}; S.navOpen[gi]=!S.navOpen[gi]; save(); renderNav(); return}
+    if(ng){var gi=parseInt(ng.getAttribute('data-ngroup'),10); if(gi!==groupOf(S.view)) go(GROUPS[gi][2][0][0]); return}
     var mgb=e.target.closest('[data-mgroup]');
-    if(mgb){navG=parseInt(mgb.getAttribute('data-mgroup'),10); navGView=S.view; renderNav(); return}
+    if(mgb){var mi=parseInt(mgb.getAttribute('data-mgroup'),10); navG=null; if(mi!==groupOf(S.view)) go(GROUPS[mi][2][0][0]); return}
     var dc=e.target.closest('[data-doc]');
     if(dc){docAction(dc.getAttribute('data-doc')); return}
     if(e.target.id==='logoDel'){if(S.company){delete S.company.logo; save(); render()} return}
     var lt=e.target.closest('[data-ltab]');
-    if(lt){lib.tab=lt.getAttribute('data-ltab'); lib.q=''; lib.open=''; render(); return}
+    if(lt){lib.q=''; libGo(lt.getAttribute('data-ltab')); lib.open=''; render(); window.scrollTo(0,0); return}
     var lg=e.target.closest('[data-grp]');
     if(lg){lib.grp=lg.getAttribute('data-grp'); render(); return}
     var la=e.target.closest('[data-area]');
     if(la){lib.area=la.getAttribute('data-area'); render(); return}
     var lo=e.target.closest('[data-open]');
-    if(lo){var o1=lo.getAttribute('data-open').split('|'); lib.tab=o1[0]; lib.open=o1[1]; lib.q=''; lib.grp=''; lib.area=''; render();
+    if(lo){var o1=lo.getAttribute('data-open').split('|'); lib.q=''; libGo(o1[0]); lib.open=o1[1]; lib.grp=''; lib.area=''; render();
       var tg=document.getElementById('kb-'+o1[1]); if(tg){tg.scrollIntoView(); if(tg.tagName==='DETAILS') tg.open=true} return}
     var ck=e.target.closest('[data-ck]');
     if(ck){var a6=ck.getAttribute('data-ck').split('|'); ckSet(a6[0],a6[1]); save(); var top0=window.scrollY; render(); window.scrollTo(0,top0); return}
@@ -1734,7 +1742,15 @@ details.kb li{padding:2px 0}
     n.textContent=msg;
   }
   var h=(location.hash||'').replace('#','');
+  if(h==='huong-dan') h='tv-checklist';
   if(RENDER[h]) S.view=h;
+  /* Kiến thức: mở một đầu mục thì các đầu mục cùng danh sách tự thu gọn */
+  document.addEventListener('toggle',function(e){
+    var d=e.target; if(!d||!d.matches||!d.matches('details.kb')||!d.open) return;
+    var box=d.parentNode; if(!box) return;
+    Array.prototype.forEach.call(box.children,function(x){if(x!==d&&x.tagName==='DETAILS'&&x.classList.contains('kb')&&x.open) x.open=false});
+    if(d.id&&d.id.indexOf('kb-')===0&&box.closest&&box.closest('#kbBody')) lib.open=d.id.slice(3);
+  },true);
   render();
   if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ navigator.serviceWorker.register('sw.js').catch(function(){}) }
 })();
