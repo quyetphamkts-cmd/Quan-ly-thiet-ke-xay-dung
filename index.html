@@ -245,6 +245,7 @@ details.kb li{padding:2px 0}
 <script src="kb.js"></script>
 <script src="kb2.js"></script>
 <script src="forms.js"></script>
+<script src="files.js"></script>
 <script>
 (function(){
   var KEY='so-cong-truong-v3';
@@ -456,6 +457,7 @@ details.kb li{padding:2px 0}
   S=load()||seed();
   if(!S.contracts) seedExtra(S);
   if(!S.chk) S.chk={};
+  if(!S.ctpl) S.ctpl=[];
   var KBD=window.KB||{stages:[],procs:[],defects:[],incidents:[],itp:[],acceptDocs:[],matApproval:[],matAcceptance:[],sampling:[],sources:[],photoList:[],goldRules:[],sampleRule:''};
 
   /* ---------- tính toán ---------- */
@@ -725,7 +727,7 @@ details.kb li{padding:2px 0}
       }).join('');
       return '<section class="panel"><div style="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:baseline;justify-content:space-between"><div><b>'+esc(k.no)+'</b> · '+esc(k.title)+'<br><small style="color:var(--muted)">'+esc(k.party)+' · ký '+fmtD(k.signed)+' · thực hiện '+fmtDM(k.start)+' – '+fmtDM(k.end)+'</small></div><div style="text-align:right"><span class="pill muted">'+esc(k.type)+'</span><br><b>'+vnd(k.value)+'</b></div></div>'+
         '<div class="meter" style="margin:10px 0 4px"><i style="width:'+clamp(pc,0,100)+'%"></i></div><small style="color:var(--muted)">Đã thanh toán '+vnd(paid)+' ('+pc+'%)</small>'+
-        '<div class="scroll" style="margin-top:8px"><table><thead><tr><th>Đợt thanh toán</th><th>Hạn</th><th class="num">Số tiền</th><th class="num">% HĐ</th><th>Trạng thái</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" class="empty">Chưa có đợt thanh toán.</td></tr>')+'</tbody></table></div></section>';
+        '<div class="scroll" style="margin-top:8px"><table><thead><tr><th>Đợt thanh toán</th><th>Hạn</th><th class="num">Số tiền</th><th class="num">% HĐ</th><th>Trạng thái</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" class="empty">Chưa có đợt thanh toán.</td></tr>')+'</tbody></table></div>'+fileList('k',k)+'</section>';
     }).join('');
     var kOpts=ks.map(function(k){return '<option value="'+k.id+'">'+esc(k.no)+' · '+esc(k.title)+'</option>'}).join('');
     return head('Hợp đồng','Hợp đồng với chủ đầu tư, thầu phụ và nhà cung cấp, kèm các đợt thanh toán và công nợ.')+
@@ -747,7 +749,7 @@ details.kb li{padding:2px 0}
       '<label for="pLabel">Tên đợt<input type="text" id="pLabel" required></label>'+
       '<label for="pAmt">Số tiền (đồng)<input type="number" id="pAmt" min="0" step="1000" required></label>'+
       '<label for="pDue">Hạn thanh toán<input type="date" id="pDue" value="'+addDays(30)+'" required></label>'+
-      '<button class="btn" type="submit">Thêm đợt</button></form></section>':'');
+      '<button class="btn" type="submit">Thêm đợt</button></form></section>':'')+tplPanel();
   }
 
   function vMinutes(){
@@ -974,7 +976,7 @@ details.kb li{padding:2px 0}
       var act=q.status==='nhap'?'<button class="btn ghost sm" type="button" data-qst="'+q.id+'|gui">Đánh dấu đã gửi khách</button>':q.status==='gui'?'<button class="btn good sm" type="button" data-qst="'+q.id+'|chap-nhan">Khách chấp nhận</button> <button class="btn ghost sm" type="button" data-qst="'+q.id+'|tu-choi">Khách từ chối</button>':'<button class="btn ghost sm" type="button" data-qst="'+q.id+'|nhap">Chuyển về bản nháp</button>';
       return '<section class="panel"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><b>'+esc(q.no)+'</b> · '+esc(q.title)+'<br><small style="color:var(--muted)">Ngày '+fmtD(q.date)+' · VAT '+q.vat+'%</small></div><span class="pill '+st[1]+'">'+st[0]+'</span></div>'+
         '<div class="scroll" style="margin-top:8px"><table><thead><tr><th>Hạng mục</th><th>ĐVT</th><th class="num">Khối lượng</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" class="empty">Chưa có hạng mục.</td></tr>')+'</tbody></table></div>'+
-        '<p style="text-align:right;margin:8px 0 0">Cộng: '+vnd(t.sub)+' · VAT: '+vnd(t.vat)+'<br><b>Tổng thanh toán: '+vnd(t.total)+'</b></p><p style="margin:8px 0 0">'+act+'</p></section>';
+        '<p style="text-align:right;margin:8px 0 0">Cộng: '+vnd(t.sub)+' · VAT: '+vnd(t.vat)+'<br><b>Tổng thanh toán: '+vnd(t.total)+'</b></p><p style="margin:8px 0 0">'+act+'</p>'+fileList('q',q)+'</section>';
     }).join('');
     var qOpts=qs.map(function(q){return '<option value="'+q.id+'">'+esc(q.no)+' · '+esc(q.title)+'</option>'}).join('');
     var open=qs.filter(function(q){return q.status==='gui'}).length, won=sum(qs.filter(function(q){return q.status==='chap-nhan'}),function(q){return quoteTotals(q).total});
@@ -993,7 +995,7 @@ details.kb li{padding:2px 0}
       '<label for="zUnit">ĐVT<input type="text" id="zUnit" required></label>'+
       '<label for="zQty">Khối lượng<input type="number" id="zQty" min="0" step="any" required></label>'+
       '<label for="zPrice">Đơn giá (đồng)<input type="number" id="zPrice" min="0" step="1000" required></label>'+
-      '<button class="btn" type="submit">Thêm hạng mục</button></form></section>':'');
+      '<button class="btn" type="submit">Thêm hạng mục</button></form></section>':'')+xlPanel();
   }
 
   function vCompanyGuides(){
@@ -1205,8 +1207,227 @@ details.kb li{padding:2px 0}
     window.scrollTo(0,0);
   }
 
+  /* ---------- Đính kèm file, nhập Excel, mẫu Word ---------- */
+  function flash(msg){
+    var n=document.createElement('div'); n.setAttribute('role','status');
+    n.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:90vw;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;z-index:99;font-size:14px';
+    n.textContent=msg; document.body.appendChild(n); setTimeout(function(){n.remove()},4500);
+  }
+  function fsize(n){return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(n/1024))+' KB'}
+  function colName(i){var s=''; i++; while(i>0){var m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26)} return s}
+  function fileObj(kind,id){return (kind==='q'?S.quotes:S.contracts).filter(function(x){return x.id===id})[0]}
+  function fileList(kind,o){
+    var fs=o.files||[];
+    return '<div class="no-print" style="margin-top:10px;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center"><small style="color:var(--muted)">Tệp đính kèm:</small>'+
+      fs.map(function(f){return '<span class="pill muted" style="display:inline-flex;gap:6px;align-items:center"><button type="button" class="btn ghost sm" data-fopen="'+f.id+'" data-fn="'+esc(f.name)+'" data-ft="'+esc(f.type||'')+'" title="'+fsize(f.size)+'">'+esc(f.name)+'</button><button type="button" class="btn ghost sm" data-fdel="'+kind+'|'+o.id+'|'+f.id+'" aria-label="Xóa tệp '+esc(f.name)+'">Xóa</button></span>'}).join('')+
+      '<label class="btn ghost sm" style="cursor:pointer">Đính kèm file<input type="file" data-attach="'+kind+'|'+o.id+'" style="display:none"></label></div>';
+  }
+  function openFile(id,name,type){
+    FILES.get(id).then(function(b){
+      if(!b){flash('Không tìm thấy nội dung file. Có thể dữ liệu trình duyệt đã bị xóa.'); return}
+      var url=URL.createObjectURL(b), a=document.createElement('a'); a.href=url; a.rel='noopener';
+      if(/^(image\/|application\/pdf)/.test(type)) a.target='_blank'; else a.download=name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(url)},60000);
+    }).catch(function(err){flash('Không mở được file: '+err.message)});
+  }
+  function attachFile(fl,key){
+    var a=key.split('|'), o=fileObj(a[0],a[1]); if(!o) return;
+    if(fl.size>25*1048576){flash('File lớn hơn 25 MB, hãy chọn file nhỏ hơn.'); return}
+    var id=nid('f');
+    FILES.put(id,fl).then(function(){
+      o.files=o.files||[]; o.files.push({id:id,name:fl.name,type:fl.type,size:fl.size}); save(); render(); flash('Đã đính kèm '+fl.name);
+    }).catch(function(err){flash('Không lưu được file: '+err.message)});
+  }
+
+  /* nhập báo giá từ Excel */
+  var xl=null;
+  var XLF=[['name','Hạng mục'],['unit','ĐVT'],['qty','Khối lượng'],['price','Đơn giá'],['total','Thành tiền']];
+  function xlLoad(fl){
+    xl={file:fl,busy:true};
+    var r=document.getElementById('xlPrev'); if(r) r.innerHTML=xlView();
+    fl.arrayBuffer().then(function(buf){return FILES.xlsxSheets(buf)}).then(function(sheets){
+      var si=0, dt=null;
+      for(var i=0;i<sheets.length;i++){dt=FILES.detect(sheets[i].rows); if(dt){si=i; break}}
+      var base=fl.name.replace(/\.xlsx$/i,'');
+      xl={file:fl,sheets:sheets,si:si,hdr:dt?dt.hdr:0,map:dt?dt.map:{},found:!!dt,target:'new',no:'BG-'+TODAY.replace(/-/g,''),title:base,vat:'8',mode:'replace'};
+      xlRefresh();
+    }).catch(function(err){xl={err:'Không đọc được file Excel: '+err.message+'. Chỉ hỗ trợ định dạng .xlsx.'}; xlRefresh()});
+  }
+  function xlRefresh(){var r=document.getElementById('xlPrev'); if(r) r.innerHTML=xlView()}
+  function xlView(){
+    if(!xl) return '';
+    if(xl.busy) return '<p class="note">Đang đọc file…</p>';
+    if(xl.err) return '<p style="color:var(--bad)">'+esc(xl.err)+'</p>';
+    var rows=xl.sheets[xl.si].rows, hr=rows[xl.hdr]||[];
+    function colOpts(k){var cur=xl.map[k]; return '<option value="">(không có)</option>'+hr.map(function(c,i){return '<option value="'+i+'"'+(cur===i?' selected':'')+'>Cột '+colName(i)+(String(c).trim()?' · '+esc(String(c).trim().slice(0,26)):'')+'</option>'}).join('')}
+    var res=FILES.quoteItems(rows,xl.hdr,xl.map), total=sum(res.items,function(i){return i.qty*i.price});
+    var prev=res.items.slice(0,8).map(function(i){return '<tr><td>'+esc(i.name)+'</td><td>'+esc(i.unit)+'</td><td class="num">'+i.qty.toLocaleString('vi-VN')+'</td><td class="num">'+vnd(i.price)+'</td><td class="num">'+vnd(i.qty*i.price)+'</td></tr>'}).join('');
+    var qs=S.quotes.filter(function(q){return q.pid===S.pid});
+    return (xl.found?'<p class="note" style="margin:8px 0">Đã nhận dạng dòng tiêu đề và các cột. Kiểm tra lại bên dưới.</p>':'<p style="color:var(--warn);margin:8px 0">Chưa nhận dạng được tiêu đề cột. Hãy chọn đúng dòng tiêu đề và các cột bên dưới.</p>')+
+      '<form class="f" onsubmit="return false">'+
+      (xl.sheets.length>1?'<label for="xlSheet">Trang tính<select id="xlSheet" data-xl="si">'+xl.sheets.map(function(s,i){return '<option value="'+i+'"'+(i===xl.si?' selected':'')+'>'+esc(s.name)+'</option>'}).join('')+'</select></label>':'')+
+      '<label for="xlHdr">Dòng tiêu đề (số dòng trong Excel)<input type="number" id="xlHdr" data-xl="hdr" min="1" value="'+(xl.hdr+1)+'"></label>'+
+      XLF.map(function(f){return '<label for="xm_'+f[0]+'">'+f[1]+'<select id="xm_'+f[0]+'" data-xlmap="'+f[0]+'">'+colOpts(f[0])+'</select></label>'}).join('')+
+      '</form>'+
+      '<div class="scroll" style="margin-top:10px"><table><thead><tr><th>Hạng mục</th><th>ĐVT</th><th class="num">Khối lượng</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead><tbody>'+(prev||'<tr><td colspan="5" class="empty">Chưa đọc được hạng mục nào.</td></tr>')+'</tbody></table></div>'+
+      '<p style="margin:8px 0">Đọc được <b>'+res.items.length+'</b> hạng mục'+(res.skipped?', bỏ qua '+res.skipped+' dòng tiêu đề nhóm hoặc dòng tổng':'')+'. Cộng trước VAT: <b>'+vnd(total)+'</b>'+(res.items.length>8?' (chỉ hiện 8 dòng đầu)':'')+'</p>'+
+      '<form class="f" onsubmit="return false">'+
+      '<label class="wide" for="xlTarget">Nhập vào<select id="xlTarget" data-xl="target"><option value="new"'+(xl.target==='new'?' selected':'')+'>Tạo báo giá mới</option>'+qs.map(function(q){return '<option value="'+q.id+'"'+(xl.target===q.id?' selected':'')+'>Báo giá '+esc(q.no)+' · '+esc(q.title)+'</option>'}).join('')+'</select></label>'+
+      (xl.target==='new'?
+        '<label for="xlNo">Số báo giá<input type="text" id="xlNo" data-xl="no" value="'+esc(xl.no)+'"></label><label class="wide" for="xlTitle">Nội dung<input type="text" id="xlTitle" data-xl="title" value="'+esc(xl.title)+'"></label><label for="xlVat">VAT (%)<select id="xlVat" data-xl="vat">'+['0','8','10'].map(function(v){return '<option'+(xl.vat===v?' selected':'')+'>'+v+'</option>'}).join('')+'</select></label>'
+        :'<label for="xlMode">Cách nhập<select id="xlMode" data-xl="mode"><option value="replace"'+(xl.mode==='replace'?' selected':'')+'>Thay toàn bộ hạng mục hiện có</option><option value="append"'+(xl.mode==='append'?' selected':'')+'>Thêm vào cuối</option></select></label>')+
+      '<button class="btn" type="button" data-xlgo="1"'+(res.items.length?'':' disabled')+'>Nhập '+res.items.length+' hạng mục</button></form>';
+  }
+  function xlPanel(){
+    return '<section class="panel no-print"><h2>Nhập báo giá từ file Excel</h2><p class="sub" style="margin-bottom:8px">Chọn file .xlsx có các cột STT, hạng mục, ĐVT, khối lượng, đơn giá. Ứng dụng tự nhận dạng cột, bạn xem trước rồi mới nhập. File gốc được đính kèm vào báo giá để xem lại.</p>'+
+      '<form class="f" onsubmit="return false"><label class="wide" for="xlFile">File Excel (.xlsx)<input type="file" id="xlFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label></form><div id="xlPrev">'+xlView()+'</div></section>';
+  }
+  function xlGo(){
+    if(!xl||!xl.sheets) return;
+    var res=FILES.quoteItems(xl.sheets[xl.si].rows,xl.hdr,xl.map);
+    if(!res.items.length){flash('Chưa có hạng mục nào để nhập.'); return}
+    var items=res.items.map(function(i){return {id:nid('z'),name:i.name,unit:i.unit||'',qty:i.qty,price:i.price}}), q, fl=xl.file, fid=nid('f');
+    if(xl.target==='new'){
+      if(!xl.no.trim()||!xl.title.trim()){flash('Hãy nhập số báo giá và nội dung.'); return}
+      q={id:nid('q'),pid:S.pid,no:xl.no.trim(),title:xl.title.trim(),date:TODAY,status:'nhap',vat:parseFloat(xl.vat)||0,items:items,files:[]};
+      S.quotes.push(q);
+    }else{
+      q=S.quotes.filter(function(x){return x.id===xl.target})[0]; if(!q) return;
+      q.items=xl.mode==='append'?q.items.concat(items):items;
+    }
+    FILES.put(fid,fl).then(function(){q.files=q.files||[]; q.files.push({id:fid,name:fl.name,type:fl.type,size:fl.size})}).catch(function(){}).then(function(){
+      xl=null; save(); render(); flash('Đã nhập '+items.length+' hạng mục.');
+    });
+  }
+
+  /* mẫu hợp đồng Word có thẻ {{...}} */
+  var TAGS=[
+    ['Công ty (Bên B)',[['cty.ten','Tên công ty'],['cty.viettat','Tên viết tắt'],['cty.mst','Mã số thuế'],['cty.diachi','Địa chỉ'],['cty.dienthoai','Điện thoại'],['cty.email','Email'],['cty.daidien','Người đại diện'],['cty.chucvu','Chức vụ'],['cty.stk','Số tài khoản'],['cty.nganhang','Ngân hàng'],['cty.giayphep','Giấy phép kinh doanh'],['cty.chungchi','Chứng chỉ năng lực']]],
+    ['Khách hàng (Bên A)',[['khach.ten','Tên khách hàng'],['khach.diachi','Địa chỉ'],['khach.mst','MST / CCCD'],['khach.daidien','Người đại diện'],['khach.chucvu','Chức vụ'],['khach.dienthoai','Điện thoại'],['khach.email','Email'],['khach.stk','Tài khoản']]],
+    ['Dự án',[['duan.ten','Tên dự án'],['duan.diadiem','Địa điểm'],['duan.loai','Loại hình'],['duan.hinhthuc','Hình thức']]],
+    ['Hợp đồng',[['hd.so','Số hợp đồng'],['hd.noidung','Nội dung'],['hd.doitac','Bên đối tác'],['hd.giatri','Giá trị (số)'],['hd.giatri_chu','Giá trị (bằng chữ)'],['hd.ngayky','Ngày ký'],['hd.ngaybatdau','Ngày bắt đầu'],['hd.ngayketthuc','Ngày kết thúc']]],
+    ['Ngày lập',[['ngay.hientai','Ngày hôm nay (dd/mm/yyyy)'],['ngay.ngay','Ngày'],['ngay.thang','Tháng'],['ngay.nam','Năm'],['diadanh','Địa danh']]]
+  ];
+  function tagVals(k){
+    var C=S.company||{}, P=proj()||{}, A=S.clients.filter(function(c){return c.id===P.client})[0]||{}, d=TODAY.split('-');
+    var v={'cty.ten':C.name,'cty.viettat':C.short,'cty.mst':C.tax,'cty.diachi':C.addr,'cty.dienthoai':C.phone,'cty.email':C.email,'cty.daidien':C.rep,'cty.chucvu':C.role,'cty.stk':C.bankNo,'cty.nganhang':C.bankName,'cty.giayphep':C.license,'cty.chungchi':C.cert,
+      'khach.ten':A.name,'khach.diachi':A.addr,'khach.mst':A.idno,'khach.daidien':A.rep,'khach.chucvu':A.role,'khach.dienthoai':A.phone||'','khach.email':A.email,'khach.stk':A.bank,
+      'duan.ten':P.name,'duan.diadiem':P.addr,'duan.loai':P.type,'duan.hinhthuc':P.mode,
+      'ngay.hientai':fmtD(TODAY),'ngay.ngay':String(parseInt(d[2],10)),'ngay.thang':String(parseInt(d[1],10)),'ngay.nam':d[0],'diadanh':C.city};
+    if(k){v['hd.so']=k.no; v['hd.noidung']=k.title; v['hd.doitac']=k.party; v['hd.giatri']=Math.round(k.value).toLocaleString('vi-VN'); v['hd.giatri_chu']=FM?FM.docSo(k.value):''; v['hd.ngayky']=fmtD(k.signed); v['hd.ngaybatdau']=fmtD(k.start); v['hd.ngayketthuc']=fmtD(k.end)}
+    else ['hd.so','hd.noidung','hd.doitac','hd.giatri','hd.giatri_chu','hd.ngayky','hd.ngaybatdau','hd.ngayketthuc'].forEach(function(t){v[t]=''});
+    Object.keys(v).forEach(function(t){if(v[t]==null) v[t]=''});
+    return v;
+  }
+  var tp={sel:'',src:'',paras:null,tags:[],html:'',unknown:[],blob:null,buf:null,bufId:''};
+  function tplSel(){return (S.ctpl||[]).filter(function(t){return t.id===tp.sel})[0]}
+  function tpBuf(t){
+    if(tp.buf&&tp.bufId===t.fileId) return Promise.resolve(tp.buf);
+    return FILES.get(t.fileId).then(function(b){if(!b) throw new Error('Không tìm thấy file mẫu trong trình duyệt này'); return b.arrayBuffer()}).then(function(buf){tp.buf=buf; tp.bufId=t.fileId; return buf});
+  }
+  function tpLoad(){
+    var t=tplSel(); if(!t) return;
+    tpBuf(t).then(function(buf){return FILES.docxParas(buf)}).then(function(r){tp.paras=r.paras; tp.tags=r.tags; render(); return tpBuild()}).catch(function(err){flash(err.message)});
+  }
+  function tpBuild(){
+    var t=tplSel(); if(!t) return Promise.resolve();
+    var k=S.contracts.filter(function(x){return x.id===tp.src})[0];
+    return tpBuf(t).then(function(buf){return FILES.docxFill(buf.slice(0),tagVals(k),t.rules)}).then(function(r){
+      tp.blob=r.blob; tp.html=r.html; tp.unknown=r.unknown;
+      var pv=document.getElementById('docPrev'); if(pv) pv.innerHTML='<div class="page">'+tp.html+'</div>';
+      var inf=document.getElementById('tpInfo'); if(inf) inf.textContent=tp.unknown.length?'Thẻ chưa có dữ liệu: '+tp.unknown.map(function(x){return '{{'+x+'}}'}).join(', '):'';
+    }).catch(function(err){flash('Không dựng được văn bản: '+err.message)});
+  }
+  function tplPanel(){
+    var list=S.ctpl||[], t=tplSel();
+    var out='<section class="panel no-print"><h2>Mẫu hợp đồng Word riêng</h2><p class="sub" style="margin-bottom:8px">Tải file hợp đồng .docx của công ty lên một lần. Gắn thẻ vào các chỗ cần thay (tên khách, số hợp đồng, giá trị…), sau đó chỉ cần chọn hợp đồng để tự điền, xem trước, in hoặc tải về. Bạn cũng có thể gõ sẵn thẻ dạng {{khach.ten}} ngay trong Word.</p>'+
+      '<form class="f" onsubmit="return false"><label class="wide" for="tplFile">Tải mẫu hợp đồng (.docx)<input type="file" id="tplFile" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label></form>'+
+      (list.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+list.map(function(x){return '<span style="display:inline-flex;gap:4px"><button type="button" class="btn sm'+(x.id===tp.sel?'':' ghost')+'" data-tsel="'+x.id+'">'+esc(x.name)+' ('+x.rules.length+' thẻ gắn)</button><button type="button" class="btn ghost sm" data-tdel="'+x.id+'" aria-label="Xóa mẫu '+esc(x.name)+'">Xóa</button></span>'}).join('')+'</div>':'<p class="empty" style="margin-top:10px">Chưa có mẫu nào.</p>')+'</section>';
+    if(!t) return out;
+    var ks=S.contracts.filter(function(k){return k.pid===S.pid});
+    var tagOpts='<option value="">Chọn thẻ…</option>'+TAGS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(x){return '<option value="'+x[0]+'">'+x[1]+'  {{'+x[0]+'}}</option>'}).join('')+'</optgroup>'}).join('');
+    out+='<section class="panel no-print"><h2>Gắn thẻ cho: '+esc(t.name)+'</h2>'+
+      (t.rules.length?'<ul style="margin:0 0 10px;padding-left:18px">'+t.rules.map(function(r,i){return '<li style="padding:2px 0">“'+esc(r.find.length>60?r.find.slice(0,60)+'…':r.find)+'” → <code>{{'+esc(r.tag)+'}}</code> <button type="button" class="btn ghost sm" data-rdel="'+i+'">Bỏ</button></li>'}).join('')+'</ul>':'')+
+      (tp.tags&&tp.tags.length?'<p class="note" style="margin:0 0 8px">Thẻ gõ sẵn trong file: '+tp.tags.map(function(x){return '{{'+esc(x)+'}}'}).join(', ')+'</p>':'')+
+      '<form class="f" onsubmit="return false"><label class="wide" for="trFind">Đoạn chữ cố định trong mẫu cần thay (khớp từng chữ, nằm trong một đoạn văn)<input type="text" id="trFind" placeholder="Ví dụ: Công ty TNHH ABC"></label>'+
+      '<label class="wide" for="trTag">Thay bằng<select id="trTag">'+tagOpts+'</select></label><button type="button" class="btn" data-radd="1">Gắn thẻ</button></form>'+
+      (tp.paras?'<details style="margin-top:10px"><summary style="cursor:pointer">Nội dung file ('+tp.paras.length+' đoạn). Bấm vào một đoạn để lấy chữ vào ô trên</summary><div style="max-height:260px;overflow:auto;margin-top:6px">'+tp.paras.slice(0,120).map(function(x,i){return '<button type="button" class="btn ghost sm" data-ppick="'+i+'" style="display:block;width:100%;text-align:left;margin:2px 0;white-space:normal">'+esc(x.length>140?x.slice(0,140)+'…':x)+'</button>'}).join('')+'</div></details>':'<p class="note">Đang đọc nội dung file…</p>')+
+      '<p class="note" style="margin-top:8px">Khi gắn thẻ, đoạn văn chứa thẻ sẽ lấy định dạng của chữ đầu đoạn. Các đoạn không có thẻ giữ nguyên định dạng gốc. Nên kiểm tra lại bản in trước khi ký.</p></section>';
+    out+='<section class="panel no-print"><h2>Điền và xuất</h2><form class="f" onsubmit="return false"><label class="wide" for="trSrc">Hợp đồng nguồn (điền sẵn số, giá trị, ngày)<select id="trSrc"><option value="">Không chọn</option>'+ks.map(function(k){return '<option value="'+k.id+'"'+(k.id===tp.src?' selected':'')+'>'+esc(k.no)+' · '+esc(k.title)+'</option>'}).join('')+'</select></label></form>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn" data-tp="print">In hoặc lưu PDF</button><button type="button" class="btn ghost" data-tp="docx">Tải file Word (.docx)</button><span id="tpInfo" style="align-self:center;color:var(--warn)">'+(tp.unknown.length?'Thẻ chưa có dữ liệu: '+tp.unknown.map(function(x){return '{{'+x+'}}'}).join(', '):'')+'</span></div></section>';
+    out+='<div id="docPrint" class="paperwrap"><div id="docPrev">'+(tp.html?'<div class="page">'+tp.html+'</div>':'')+'</div></div>';
+    return out;
+  }
+  function fileClick(e){
+    var t=e.target, b;
+    if((b=t.closest('[data-fopen]'))){openFile(b.getAttribute('data-fopen'),b.getAttribute('data-fn'),b.getAttribute('data-ft')); return true}
+    if((b=t.closest('[data-fdel]'))){
+      var a=b.getAttribute('data-fdel').split('|'), o=fileObj(a[0],a[1]);
+      if(o&&window.confirm('Xóa tệp đính kèm này?')){o.files=(o.files||[]).filter(function(f){return f.id!==a[2]}); FILES.del(a[2]).catch(function(){}); save(); render()}
+      return true;
+    }
+    if(t.closest('[data-xlgo]')){xlGo(); return true}
+    if((b=t.closest('[data-tsel]'))){tp.sel=b.getAttribute('data-tsel'); tp.paras=null; tp.tags=[]; tp.html=''; tp.unknown=[]; render(); tpLoad(); return true}
+    if((b=t.closest('[data-tdel]'))){
+      var tt=(S.ctpl||[]).filter(function(x){return x.id===b.getAttribute('data-tdel')})[0];
+      if(tt&&window.confirm('Xóa mẫu "'+tt.name+'"?')){FILES.del(tt.fileId).catch(function(){}); S.ctpl=S.ctpl.filter(function(x){return x!==tt}); if(tp.sel===tt.id){tp.sel=''; tp.html=''; tp.buf=null} save(); render()}
+      return true;
+    }
+    if(t.closest('[data-radd]')){
+      var cur=tplSel(), f=(document.getElementById('trFind')||{}).value||'', tg=(document.getElementById('trTag')||{}).value||'';
+      if(!cur||!f.trim()||!tg){flash('Hãy nhập đoạn chữ cần thay và chọn thẻ.'); return true}
+      if(!tp.paras||!tp.paras.some(function(x){return x.indexOf(f)>=0})){flash('Không thấy đoạn chữ này trong file. Hãy bấm vào một đoạn trong danh sách để lấy đúng chữ.'); return true}
+      cur.rules.push({find:f,tag:tg}); save(); render(); tpBuild(); return true;
+    }
+    if((b=t.closest('[data-rdel]'))){var c2=tplSel(); if(c2){c2.rules.splice(parseInt(b.getAttribute('data-rdel'),10),1); save(); render(); tpBuild()} return true}
+    if((b=t.closest('[data-ppick]'))){var fi=document.getElementById('trFind'); if(fi&&tp.paras){fi.value=tp.paras[parseInt(b.getAttribute('data-ppick'),10)]||''; fi.focus(); fi.scrollIntoView({block:'center'})} return true}
+    if((b=t.closest('[data-tp]'))){
+      var m=b.getAttribute('data-tp'), cu=tplSel();
+      if(m==='print'){if(!tp.html){flash('Chưa có nội dung để in.'); return true} try{window.print()}catch(x){flash('Trình duyệt này chặn in.')} }
+      else if(m==='docx'&&cu){
+        if(!tp.blob){flash('Chưa dựng được file.'); return true}
+        var k=S.contracts.filter(function(x){return x.id===tp.src})[0], url=URL.createObjectURL(tp.blob), el=document.createElement('a');
+        el.href=url; el.download=cu.name.replace(/\.docx$/i,'')+(k?' - '+k.no.replace(/[\\/:*?"<>|]/g,'-'):'')+'.docx'; document.body.appendChild(el); el.click();
+        setTimeout(function(){URL.revokeObjectURL(url); el.remove()},1500);
+      }
+      return true;
+    }
+    return false;
+  }
+  function fileChange(e){
+    var el=e.target, v;
+    if(el.id==='xlFile'){if(el.files&&el.files[0]) xlLoad(el.files[0]); return true}
+    if(el.id==='tplFile'){
+      var fl=el.files&&el.files[0]; if(!fl) return true;
+      if(!/\.docx$/i.test(fl.name)){flash('Chỉ nhận file Word định dạng .docx (không nhận .doc).'); return true}
+      if(fl.size>25*1048576){flash('File lớn hơn 25 MB.'); return true}
+      fl.arrayBuffer().then(function(buf){return FILES.docxParas(buf).then(function(){
+        var id=nid('m'), fid=nid('f');
+        return FILES.put(fid,fl).then(function(){S.ctpl=S.ctpl||[]; S.ctpl.push({id:id,name:fl.name,fileId:fid,rules:[]}); tp.sel=id; tp.buf=null; tp.paras=null; tp.html=''; save(); render(); tpLoad()});
+      })}).catch(function(err){flash('Không đọc được file Word: '+err.message)});
+      return true;
+    }
+    if(el.getAttribute('data-attach')){if(el.files&&el.files[0]) attachFile(el.files[0],el.getAttribute('data-attach')); return true}
+    if(el.id==='trSrc'){tp.src=el.value; tpBuild(); return true}
+    if(xl&&xl.sheets&&(v=el.getAttribute('data-xlmap'))){xl.map[v]=el.value===''?undefined:parseInt(el.value,10); xlRefresh(); return true}
+    if(xl&&xl.sheets&&(v=el.getAttribute('data-xl'))){
+      if(v==='si'){xl.si=parseInt(el.value,10); var dt=FILES.detect(xl.sheets[xl.si].rows); xl.hdr=dt?dt.hdr:0; xl.map=dt?dt.map:{}; xl.found=!!dt}
+      else if(v==='hdr'){xl.hdr=Math.max(0,(parseInt(el.value,10)||1)-1)}
+      else xl[v]=el.value;
+      if(el.tagName==='SELECT'||v==='hdr') xlRefresh();
+      return true;
+    }
+    return false;
+  }
+  function fileInput(e){
+    var el=e.target, v=el.getAttribute&&el.getAttribute('data-xl');
+    if(xl&&xl.sheets&&v&&(v==='no'||v==='title')){xl[v]=el.value; return true}
+    return false;
+  }
+
   /* ---------- sự kiện ---------- */
   document.addEventListener('click',function(e){
+    if(fileClick(e)) return;
     var b=e.target.closest('[data-view]'); if(b){go(b.getAttribute('data-view')); return}
     var py=e.target.closest('[data-pay]');
     if(py){var a1=py.getAttribute('data-pay').split('|'); S.contracts.forEach(function(k){if(k.id===a1[0]) k.pays.forEach(function(p){if(p.id===a1[1]) p.paid=p.paid?'':TODAY})}); save(); render(); return}
@@ -1290,6 +1511,7 @@ details.kb li{padding:2px 0}
     out.textContent='Cần tối thiểu '+n+' tổ mẫu ('+m.name+', lô '+m.lot.toLocaleString('vi-VN')+' '+m.unit+'). Mẫu: '+m.sample+'.';
   }
   document.addEventListener('input',function(e){
+    if(fileInput(e)) return;
     if(e.target.id==='kbq'){lib.q=e.target.value; var b=document.getElementById('kbBody'); if(b) b.innerHTML=libBody(); var t=document.querySelectorAll('[data-ltab]'); for(var i=0;i<t.length;i++) t[i].setAttribute('aria-pressed',(!lib.q&&t[i].getAttribute('data-ltab')===lib.tab)?'true':'false'); return}
     if(e.target.id==='smQty') calcSamples();
     var tg=e.target;
@@ -1297,6 +1519,7 @@ details.kb li{padding:2px 0}
     if(tg.getAttribute&&tg.getAttribute('data-ca')){var P0=proj(), A0=S.clients.filter(function(c){return c.id===P0.client})[0]; if(A0){A0[tg.getAttribute('data-ca')]=tg.value; save(); refreshDoc()} return}
   });
   document.addEventListener('change',function(e){
+    if(fileChange(e)) return;
     if(e.target.id==='smSel'){calcSamples(); return}
     if(e.target.id==='tplSel'){dr.tpl=e.target.value; dr.src=''; var tt=tplById(dr.tpl); dr.f=tt?tplDefaults(tt):{}; render(); return}
     if(e.target.id==='srcSel'){dr.src=e.target.value; render(); return}
