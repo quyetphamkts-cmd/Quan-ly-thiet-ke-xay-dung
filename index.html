@@ -115,6 +115,8 @@ h2{font:700 18px/1.2 var(--display); text-transform:uppercase; letter-spacing:.0
 .pill.bad{background:var(--bad-soft); color:var(--bad)}
 .pill.muted{background:var(--bar); color:var(--muted)}
 .alerts{list-style:none; margin:0; padding:0}
+#updBar{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); width:min(560px,calc(100vw - 32px)); z-index:98; display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; background:var(--surface); border:1px solid var(--accent); border-radius:8px; padding:10px 12px; box-shadow:0 6px 24px rgba(0,0,0,.18)}
+#updBar span{flex:1 1 220px; min-width:0}
 #lgList{max-height:62vh; overflow:auto; border-top:1px solid var(--line)}
 .lgr{display:flex; gap:10px; align-items:flex-start; padding:7px 2px; border-bottom:1px solid var(--line); font-size:13px; line-height:1.45; min-width:0}
 .lgr time{flex:none; width:64px; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums}
@@ -510,7 +512,7 @@ details.kb li{padding:2px 0}
 
   /* ---------- giao diện ---------- */
   var GROUPS=[
-    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['khach-hang','Khách hàng']]],
+    ['Công ty','building',[['tong-quan','Tổng quan'],['du-an','Dự án'],['cong-trinh','Thông tin công trình'],['khach-hang','Khách hàng']]],
     ['Thiết kế','pen',[['giai-doan','Giai đoạn thiết kế'],['thiet-ke','Hồ sơ thiết kế']]],
     ['Kinh doanh và pháp lý','file',[['bao-gia','Báo giá'],['hop-dong','Hợp đồng'],['bien-ban','Biên bản'],['bieu-mau','Biểu mẫu và in']]],
     ['Thi công','brick',[['tien-do','Tiến độ'],['nhat-ky','Nhật ký'],['vat-tu','Vật tư đầu vào'],['ngan-sach','Ngân sách']]],
@@ -927,6 +929,61 @@ details.kb li{padding:2px 0}
     out+='<div id="docPrint" class="paperwrap"><div id="docPrev">'+docHtml()+'</div></div>';
     return out;
   }
+  /* ---------- Thông tin công trình (theo dự án đang chọn) ---------- */
+  var CT=[
+    ['Thông tin chung',[['@name','Tên công trình','text','wide'],['@addr','Địa điểm xây dựng','text','wide'],['thua','Số thửa, tờ bản đồ','text'],
+      ['loai','Loại công trình','sel',['Nhà ở riêng lẻ','Nhà phố, shophouse','Biệt thự','Nhà xưởng, kho','Văn phòng','Công trình công cộng','Cải tạo, sửa chữa','Khác']],
+      ['cap','Cấp công trình','sel',['Cấp IV','Cấp III','Cấp II','Cấp I','Cấp đặc biệt']],['mucdich','Mục đích sử dụng','text']]],
+    ['Chủ đầu tư',[['@client','Chủ đầu tư (khách hàng)','client'],['cdtRep','Người đại diện','text'],['cdtPhone','Điện thoại','text'],['cdtAddr','Địa chỉ liên hệ','text','wide']]],
+    ['Quy mô',[['dtDat','Diện tích lô đất (m²)','num'],['dtXd','Diện tích xây dựng tầng 1 (m²)','num'],['tangNoi','Số tầng nổi','num'],['tangHam','Số tầng hầm','num'],
+      ['tum','Tum, mái','text'],['tongSan','Tổng diện tích sàn (m²)','num'],['cao','Chiều cao công trình (m)','num'],['cotNen','Cốt nền tầng 1 so với vỉa hè (m)','text'],['=matdo','Mật độ xây dựng','calc'],['=hsd','Hệ số sử dụng đất','calc']]],
+    ['Pháp lý',[['gcn','Giấy chứng nhận quyền sử dụng đất (số, ngày)','text','wide'],['gpxd','Số giấy phép xây dựng','text'],['gpxdNgay','Ngày cấp phép','date'],['gpxdCq','Cơ quan cấp phép','text'],['chiGioi','Chỉ giới xây dựng, khoảng lùi','text','wide']]],
+    ['Giải pháp kỹ thuật',[['mong','Giải pháp móng','text'],['ketCau','Hệ kết cấu chính','text'],['mai','Kết cấu mái','text'],['beTong','Cấp độ bền (mác) bê tông','text'],['diaChat','Địa chất, hiện trạng khu đất','area','wide']]],
+    ['Các bên tham gia',[['dvTk','Đơn vị thiết kế','text'],['chuNhiem','Chủ nhiệm thiết kế','text'],['dvTc','Đơn vị thi công','text'],['chht','Chỉ huy trưởng công trường','text'],['tvgs','Tư vấn giám sát','text'],['@manager','Người phụ trách (công ty)','text']]],
+    ['Thời gian và chi phí',[['khoiCong','Ngày khởi công','date'],['hoanThanh','Ngày hoàn thành dự kiến','date'],['=tg','Thời gian thi công','calc'],['tmdt','Tổng mức đầu tư dự kiến (đồng)','num'],['=suat','Suất đầu tư trên m² sàn','calc']]],
+    ['Ghi chú',[['ghiChu','Ghi chú khác','area','wide']]]
+  ];
+  function ctGet(P,k){if(k.charAt(0)==='@') return P[k.slice(1)]; return (P.info||{})[k]}
+  function ctNum(P,k){var v=parseFloat(String(ctGet(P,k)||'').replace(',','.')); return isFinite(v)?v:0}
+  function ctCalc(P,k){
+    var dat=ctNum(P,'dtDat'), xd=ctNum(P,'dtXd'), san=ctNum(P,'tongSan');
+    if(k==='=matdo') return dat&&xd?(xd/dat*100).toFixed(1).replace('.',',')+' %':'Nhập diện tích đất và diện tích xây dựng';
+    if(k==='=hsd') return dat&&san?(san/dat).toFixed(2).replace('.',','):'Nhập diện tích đất và tổng diện tích sàn';
+    if(k==='=suat'){var t=ctNum(P,'tmdt'); return t&&san?vnd(t/san)+'/m²':'Nhập tổng mức đầu tư và tổng diện tích sàn'}
+    if(k==='=tg'){var a=ctGet(P,'khoiCong'), b=ctGet(P,'hoanThanh'); if(!a||!b) return 'Nhập ngày khởi công và hoàn thành'; var d=Math.round((ts(b)-ts(a))/DAY)+1; return d>0?d+' ngày (khoảng '+(d/30).toFixed(1).replace('.',',')+' tháng)':'Ngày hoàn thành trước ngày khởi công'}
+    return '';
+  }
+  function ctFill(P){var n=0,t=0; CT.forEach(function(g){g[1].forEach(function(f){if(f[2]==='calc') return; t++; var v=ctGet(P,f[0]); if(v!=null&&String(v).trim()!=='') n++})}); return [n,t]}
+  function vSite(){
+    var P=proj(); if(!P) return head('Thông tin công trình','')+'<p class="empty">Chưa có dự án.</p>';
+    var fl=ctFill(P);
+    var secs=CT.map(function(g){
+      return '<section class="panel"><h2>'+g[0]+'</h2><form class="f" onsubmit="return false">'+g[1].map(function(f){
+        var id='ct_'+f[0].replace(/[@=]/,''), v=ctGet(P,f[0]), w=f[3]==='wide'?' class="wide"':'', inp;
+        if(f[2]==='calc') return '<label><span>'+f[1]+'</span><output id="'+id+'" style="padding:8px 0;color:var(--ink);font-weight:600">'+esc(ctCalc(P,f[0]))+'</output></label>';
+        if(f[2]==='sel') inp='<select id="'+id+'" data-ct="'+f[0]+'"><option value="">Chưa chọn</option>'+f[3].map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select>', w=' ';
+        else if(f[2]==='client') inp='<select id="'+id+'" data-ct="'+f[0]+'"><option value="">Chưa gán</option>'+S.clients.map(function(c){return '<option value="'+c.id+'"'+(c.id===v?' selected':'')+'>'+esc(c.name)+'</option>'}).join('')+'</select>';
+        else if(f[2]==='area') inp='<textarea id="'+id+'" data-ct="'+f[0]+'" rows="3">'+esc(v||'')+'</textarea>';
+        else inp='<input id="'+id+'" data-ct="'+f[0]+'" type="'+(f[2]==='date'?'date':f[2]==='num'?'number':'text')+'"'+(f[2]==='num'?' min="0" step="any" inputmode="decimal"':'')+' value="'+esc(v==null?'':v)+'">';
+        return '<label'+(w===' '?'':w)+' for="'+id+'">'+f[1]+inp+'</label>';
+      }).join('')+'</form></section>';
+    }).join('');
+    return head('Thông tin công trình','Hồ sơ tóm tắt của công trình đang chọn: '+esc(P.name)+'. Gõ đến đâu lưu đến đó; mật độ, hệ số sử dụng đất, thời gian và suất đầu tư tự tính.')+
+      '<section class="panel" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><b style="flex:1 1 220px">Đã nhập <span id="ctFill">'+fl[0]+'/'+fl[1]+'</span> mục</b><span id="ctSaved" style="color:var(--muted);font-size:13px"></span><div class="meter" style="flex:1 1 200px"><i id="ctBar" style="width:'+Math.round(fl[0]/fl[1]*100)+'%"></i></div></section>'+
+      secs+'<p class="note">Cấp công trình, chỉ giới và các thông số pháp lý cần đối chiếu giấy phép, hồ sơ thiết kế và quy định hiện hành.</p>';
+  }
+  function ctInput(el){
+    var k=el.getAttribute('data-ct'), P=proj(); if(!P) return;
+    var v=el.value;
+    if(k.charAt(0)==='@') P[k.slice(1)]=v; else {P.info=P.info||{}; if(v==='') delete P.info[k]; else P.info[k]=v}
+    save();
+    ['=matdo','=hsd','=tg','=suat'].forEach(function(c){var o=document.getElementById('ct_'+c.slice(1)); if(o) o.textContent=ctCalc(P,c)});
+    var fl=ctFill(P), fe=document.getElementById('ctFill'), fb=document.getElementById('ctBar'), sv=document.getElementById('ctSaved');
+    if(fe) fe.textContent=fl[0]+'/'+fl[1]; if(fb) fb.style.width=Math.round(fl[0]/fl[1]*100)+'%';
+    if(sv) sv.textContent='Đã lưu '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    if(k==='@name') renderProj();
+    clearTimeout(ctInput.t); ctInput.t=setTimeout(function(){if(window.SCT) SCT.log('ev','Sửa thông tin công trình')},3000);
+  }
   function vProjects(){
     var byT=PTYPES.map(function(t){return '<div><dt>'+t+'</dt><dd>'+S.projects.filter(function(p){return p.type===t}).length+'</dd></div>'}).join('');
     var rows=S.projects.map(function(p){
@@ -1240,11 +1297,32 @@ details.kb li{padding:2px 0}
     SCT.markSeen(); setTimeout(renderNav,0);
     return head('Phiên bản và nhật ký','Phiên bản đang chạy, những gì đã thay đổi qua từng bản, và nhật ký sử dụng để rà soát lỗi.')+
       '<dl class="strip"><div><dt>Phiên bản app</dt><dd>'+esc(SCT.label(SCT.ver))+'</dd></div><div><dt>Bản cài Android</dt><dd>'+(nat?esc(nat):'<small>Không, đang chạy trên trình duyệt</small>')+'</dd></div><div><dt>Phát hành</dt><dd>'+esc(cur.d)+'</dd></div><div><dt>Dữ liệu trong máy</dt><dd id="stoUse"><small>Đang tính…</small></dd></div></dl>'+
+      updPanel()+
       '<section class="panel"><h2>Có gì mới ở bản này</h2><ul style="margin:0;padding-left:20px">'+cur.items.map(function(i){return '<li style="padding:2px 0">'+esc(i)+'</li>'}).join('')+'</ul></section>'+
       '<h2 style="margin-top:22px">Ghi chú phát hành</h2>'+relList(SCT.changelog)+
       '<section class="panel" style="margin-top:22px"><h2>Nhật ký sử dụng</h2><p class="sub" style="margin-bottom:10px">Ghi lại các thao tác chính (mở app, chuyển mục, lưu, nạp file, in, xuất Word) và mọi lỗi phát sinh. Chỉ lưu trong máy này, 500 dòng gần nhất, không tự gửi đi đâu, không ghi nội dung dự án, số tiền, email hay số điện thoại. Gặp lỗi: bấm <b>Sao chép</b> rồi dán gửi cho người sửa app.</p>'+
       '<div class="tabs" style="align-items:center"><button type="button" class="btn ghost sm" data-lgf="all" aria-pressed="'+(vl.f==='all')+'">Hoạt động</button><button type="button" class="btn ghost sm" data-lgf="err" aria-pressed="'+(vl.f==='err')+'">Lỗi và cảnh báo</button><span style="flex:1"></span><button type="button" class="btn sm" data-lgact="copy">Sao chép</button><button type="button" class="btn ghost sm" data-lgact="clear">'+(vl.arm?'Bấm lại để xoá':'Xoá nhật ký')+'</button></div>'+
       '<div id="lgList">'+logRows()+'</div></section>';
+  }
+  var UPD_ACT={'san-sang':'Áp dụng ngay','tai-lai':'Tải lại trang','can-apk':'Tải bản cài APK'};
+  function updMsgHtml(){var u=SCT.upd; return (u.msg?esc(u.msg):'Chưa kiểm tra lần nào trong phiên này.')+(UPD_ACT[u.state]?' <button type="button" class="btn sm" data-upd="apply">'+UPD_ACT[u.state]+'</button>':'')}
+  function updPanel(){
+    var sh=SCT.shell(), wv=sh==='apk'?SCT.webVerApk():'';
+    return '<section class="panel"><h2>Cập nhật</h2>'+
+      '<label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="autoUpd" style="width:auto;margin-top:4px"'+(S.autoUpd===false?'':' checked')+'><span><b>Tự động cập nhật</b><br><small style="color:var(--muted)">'+
+      (sh==='web'?'Mở app là tự kiểm tra bản mới trên GitHub; có bản mới thì hiện nút Tải lại trang.':sh==='apk'?'Mở app là tự kiểm tra và tải bản mới từ GitHub (vài trăm KB). Bản tải về được dùng từ lần mở app sau, hoặc bấm Áp dụng ngay. Dữ liệu giữ nguyên.':'Bản cài Android này còn cũ, chưa tự cập nhật được. Hãy cài bản APK mới một lần, các bản sau sẽ tự cập nhật.')+
+      '</small></span></label>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"><button type="button" class="btn ghost sm" data-upd="check">Kiểm tra cập nhật</button>'+
+      (wv?'<button type="button" class="btn ghost sm" data-upd="reset">Quay về bản cài gốc</button>':'')+'</div>'+
+      '<p id="updMsg" style="margin:10px 0 0">'+updMsgHtml()+'</p>'+
+      (wv?'<p class="note" style="margin-top:8px">Đang chạy bản tải về '+esc(SCT.label(wv))+'. Nếu bản này lỗi, bấm Quay về bản cài gốc.</p>':'')+'</section>';
+  }
+  function updBar(u){
+    var old=document.getElementById('updBar'); if(old) old.remove();
+    if(!UPD_ACT[u.state]||S.view==='phien-ban') return;
+    var n=document.createElement('div'); n.id='updBar'; n.setAttribute('role','status');
+    n.innerHTML='<span>'+esc(u.msg)+'</span><button type="button" class="btn sm" data-upd="apply">'+UPD_ACT[u.state]+'</button><button type="button" class="btn ghost sm" data-upd="close">Để sau</button>';
+    document.body.appendChild(n);
   }
   function storageUse(){
     var el=document.getElementById('stoUse'); if(!el) return;
@@ -1257,7 +1335,7 @@ details.kb li{padding:2px 0}
     S.setLast=id;
     return '<div class="settabs"><span class="sett">'+ic('gear')+'Cài đặt</span><div class="tabs" style="margin:0">'+SETTINGS.map(function(x){return '<button type="button" class="btn ghost sm" data-view="'+x[0]+'" aria-pressed="'+(S.view===x[0])+'">'+x[1]+itemBadge(x[0]==='phien-ban'?'phien-ban':'')+'</button>'}).join('')+'</div></div>'+fn();
   }}
-  var RENDER={'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
+  var RENDER={'cong-trinh':vSite,'phien-ban':inSettings(vVersion,'phien-ban'),'cong-ty-info':inSettings(vCompany,'cong-ty-info'),'bieu-mau':vForms,'tong-quan':vOverview,'du-an':vProjects,'khach-hang':vClients,'giai-doan':vPhases,'thiet-ke':vDocs,'bao-gia':vQuotes,'hop-dong':vContracts,'bien-ban':vMinutes,'tien-do':vGantt,'vat-tu':function(){return vMats()+vIQC()},'nhat-ky':vLogs,'ngan-sach':vBudget,'phe-duyet':vReqs,'van-de':vIssues};
   LTABS.forEach(function(t){RENDER['tv-'+t[0]]=function(){lib.tab=t[0]; return vLibrary()}});
   function libGo(tab){
     if(S.view!=='tv-'+tab){lib.open=''; lib.grp=''; lib.area=''}
@@ -1623,6 +1701,13 @@ details.kb li{padding:2px 0}
     if(fileClick(e)) return;
     var b=e.target.closest('[data-view]'); if(b){go(b.getAttribute('data-view')); return}
     if(e.target.closest('#gearBtn')){var inS=SETTINGS.some(function(x){return x[0]===S.view}); if(!inS) go(window.SCT&&SCT.newErrors()?'phien-ban':(S.setLast||'cong-ty-info')); return}
+    var ub=e.target.closest('[data-upd]');
+    if(ub&&window.SCT){var ua=ub.getAttribute('data-upd');
+      if(ua==='check') SCT.checkUpdate(true);
+      else if(ua==='apply') SCT.applyUpdate();
+      else if(ua==='close'){var bb=document.getElementById('updBar'); if(bb) bb.remove()}
+      else if(ua==='reset'&&window.AndroidApp&&AndroidApp.webReset) AndroidApp.webReset();
+      return}
     var lgf=e.target.closest('[data-lgf]'); if(lgf){vl.f=lgf.getAttribute('data-lgf'); render(); return}
     var lga=e.target.closest('[data-lgact]');
     if(lga){
@@ -1717,6 +1802,7 @@ details.kb li{padding:2px 0}
   }
   document.addEventListener('input',function(e){
     if(fileInput(e)) return;
+    if(e.target.getAttribute&&e.target.getAttribute('data-ct')){ctInput(e.target); return}
     if(e.target.id==='kbq'){lib.q=e.target.value; var b=document.getElementById('kbBody'); if(b) b.innerHTML=libBody(); var t=document.querySelectorAll('[data-ltab]'); for(var i=0;i<t.length;i++) t[i].setAttribute('aria-pressed',(!lib.q&&t[i].getAttribute('data-ltab')===lib.tab)?'true':'false'); return}
     if(e.target.id==='smQty') calcSamples();
     var tg=e.target;
@@ -1726,6 +1812,8 @@ details.kb li{padding:2px 0}
   document.addEventListener('change',function(e){
     if(fileChange(e)) return;
     if(e.target.id==='smSel'){calcSamples(); return}
+    if(e.target.getAttribute&&e.target.getAttribute('data-ct')&&e.target.tagName==='SELECT'){ctInput(e.target); return}
+    if(e.target.id==='autoUpd'){S.autoUpd=e.target.checked; save(); if(window.SCT) SCT.log('ev','Tự động cập nhật: '+(S.autoUpd?'bật':'tắt')); return}
     if(e.target.id==='tplSel'){dr.tpl=e.target.value; dr.src=''; var tt=tplById(dr.tpl); dr.f=tt?tplDefaults(tt):{}; render(); return}
     if(e.target.id==='srcSel'){dr.src=e.target.value; render(); return}
     if(e.target.id==='co_logo'){
@@ -1835,10 +1923,14 @@ details.kb li{padding:2px 0}
       if(S.view==='phien-ban'){clearTimeout(lgT); lgT=setTimeout(function(){var L=document.getElementById('lgList'); if(L) L.innerHTML=logRows()},400)}
       if(en.l==='err') setTimeout(renderNav,0);
     });
+    SCT.onUpdate(function(u){var m=document.getElementById('updMsg'); if(m) m.innerHTML=updMsgHtml(); updBar(u)});
+    if(S.autoUpd!==false) setTimeout(function(){SCT.checkUpdate(false)},4000);
+    document.addEventListener('visibilitychange',function(){if(!document.hidden&&S.autoUpd!==false&&Date.now()-(SCT.upd.at||0)>3*3600e3) SCT.checkUpdate(false)});
     if(S.seenVer&&S.seenVer!==SCT.ver) setTimeout(function(){flash('Đã cập nhật lên phiên bản '+SCT.label(SCT.ver)+'. Xem có gì mới ở nút Cài đặt (bánh răng góc trên bên phải).')},1200);
     else if(!S.seenVer){S.seenVer=SCT.ver; save()}
   }
   render();
+  try{if(window.AndroidApp&&AndroidApp.ready) AndroidApp.ready()}catch(e){}
   if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ navigator.serviceWorker.register('sw.js').catch(function(){}) }
 })();
 </script>

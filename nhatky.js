@@ -5,13 +5,18 @@
 /* Phiên bản: x.y.z (chính thức) hoặc x.y.z-beta.N (thử nghiệm, trước bản chính thức x.y.z).
    Beta tăng dần 1 → 99; sau beta 99 thì tăng số cuối và quay về beta 1 (1.0.1-beta.99 → 1.0.2-beta.1).
    Không quay về beta 1 của cùng số. Thứ tự: 1.0.1-beta.99 < 1.0.1 < 1.0.2-beta.1. Dùng tools/bump.py để tự nâng số. */
-var APP_VER='1.0.1-beta.2';
+var APP_VER='1.0.1-beta.3';
 function verLabel(v){return String(v).replace(/-beta\.(\d+)$/,' beta $1')}
 function vparse(v){var m=String(v).match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?/)||[]; return [+m[1]||0,+m[2]||0,+m[3]||0,m[4]!=null?+m[4]:Infinity]}
 function vcmp(a,b){var x=vparse(a),y=vparse(b); for(var i=0;i<4;i++){if(x[i]!==y[i]) return x[i]>y[i]?1:-1} return 0}
 
 /* Ghi chú phát hành, mới nhất ở trên. Mỗi lần sửa app: tăng APP_VER và thêm một mục ở đầu danh sách. */
 var CHANGELOG=[
+ {v:"1.0.1-beta.3",d:"02/11/2026",items:[
+  "Tự động cập nhật: mở app là tự kiểm tra bản mới trên GitHub. Bản cài Android tự tải phần giao diện mới (vài trăm KB), dùng từ lần mở sau hoặc bấm Áp dụng ngay; dữ liệu giữ nguyên.",
+  "Cài đặt › Phiên bản và nhật ký: bật/tắt tự động cập nhật, nút Kiểm tra cập nhật, Quay về bản cài gốc nếu bản tải về bị lỗi.",
+  "Bản tải về mở lỗi thì app tự quay về bản cài gốc.",
+  "Thêm mục Thông tin công trình (nhóm Công ty): thông tin chung, chủ đầu tư, quy mô, pháp lý, giải pháp kỹ thuật, các bên tham gia, thời gian và chi phí; tự tính mật độ xây dựng, hệ số sử dụng đất, thời gian thi công, suất đầu tư."]},
  {v:"1.0.1-beta.2",d:"02/11/2026",items:[
   "Nút Cài đặt (bánh răng) ở góc trên bên phải: gồm Thông tin công ty và Phiên bản và nhật ký.",
   "Hai mục này không còn nằm trong nhóm Công ty trên menu.",
@@ -92,8 +97,56 @@ function text(filter){
 }
 function clear(){buf=[]; saveNow()}
 
+/* ---------- Tự động cập nhật ----------
+   Bản APK: tải các file giao diện mới từ GitHub vào bộ nhớ app, áp dụng khi mở lại (hoặc bấm Áp dụng ngay).
+   Bản trình duyệt: service worker lấy file mới từ mạng, chỉ cần tải lại trang.
+   Danh sách file và số phiên bản nằm ở update/version.json, do tools/bump.py cập nhật. */
+var RAW='https://raw.githubusercontent.com/quyetphamkts-cmd/Quan-ly-thiet-ke-xay-dung/main/';
+var upd={state:'',msg:'',info:null,busy:false,at:0}, updCb=null;
+function shell(){return window.AndroidApp?(AndroidApp.webBegin?'apk':'apk-cu'):'web'}
+function apkCode(){try{return +AndroidApp.apkCode()||0}catch(e){return 0}}
+function webVerApk(){try{return String(AndroidApp.webVer()||'')}catch(e){return ''}}
+function setUpd(st,msg){upd.state=st; upd.msg=msg; if(updCb) try{updCb(upd)}catch(e){}}
+function getText(u){return fetch(RAW+u+(u.indexOf('?')<0?'?t=':'&t=')+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('HTTP '+r.status+' khi tải '+u); return r.text()})}
+function checkUpdate(manual){
+  if(upd.busy) return Promise.resolve(upd);
+  if(!navigator.onLine){if(manual) setUpd('loi','Không có mạng, chưa kiểm tra được.'); return Promise.resolve(upd)}
+  upd.busy=true; upd.at=Date.now(); if(manual) setUpd('dang','Đang kiểm tra bản mới…');
+  var sh=shell();
+  return getText('update/version.json').then(function(t){
+    var j=JSON.parse(t); upd.info=j;
+    var apkNew=sh!=='web'&&j.apk&&j.apk.versionCode>(sh==='apk'?apkCode():0);
+    var webNew=vcmp(j.ver,APP_VER)>0;
+    if(!webNew&&!apkNew){setUpd('moi-nhat','Đang dùng bản mới nhất ('+verLabel(APP_VER)+').'); return}
+    if(webNew&&sh==='web'){log('info','Có bản mới '+verLabel(j.ver)); setUpd('tai-lai','Có bản '+verLabel(j.ver)+'. Tải lại trang để dùng.'); return}
+    if(webNew&&sh==='apk'&&!(j.minApk&&apkCode()<j.minApk)){
+      var wv=webVerApk();
+      if(wv&&vcmp(wv,j.ver)>=0){setUpd('san-sang','Đã tải bản '+verLabel(j.ver)+', mở lại app để dùng.'); return}
+      setUpd('dang','Đang tải bản '+verLabel(j.ver)+'…');
+      var files=j.files||['index.html','nhatky.js'], got={};
+      return Promise.all(files.map(function(f){return getText(f).then(function(x){got[f]=x})})).then(function(){
+        if((got['nhatky.js']||'').indexOf("var APP_VER='"+j.ver+"'")<0) throw new Error('các file trên GitHub chưa khớp phiên bản, thử lại sau ít phút');
+        if(!AndroidApp.webBegin()) throw new Error('không tạo được thư mục tạm');
+        files.forEach(function(f){if(!AndroidApp.webPut(f,got[f])) throw new Error('không ghi được '+f)});
+        if(!AndroidApp.webCommit(j.ver)) throw new Error('không áp dụng được bản tải về');
+        log('info','📥 Đã tải bản '+verLabel(j.ver)+' ('+files.length+' file)');
+        setUpd('san-sang','Đã tải bản '+verLabel(j.ver)+'. Bấm Áp dụng ngay hoặc mở lại app.');
+      });
+    }
+    log('info','Có bản cài Android mới '+(j.apk?verLabel(j.apk.versionName):''));
+    setUpd('can-apk','Có bản cài Android mới '+(j.apk?verLabel(j.apk.versionName):'')+'. Tải file APK rồi mở để cài đè (giữ nguyên dữ liệu).');
+  }).catch(function(e){log('warn','Kiểm tra cập nhật: '+(e&&e.message||e)); setUpd('loi','Chưa kiểm tra được: '+(e&&e.message||e)+'.')})
+  .then(function(){upd.busy=false; return upd});
+}
+function applyUpdate(){
+  if(upd.state==='tai-lai'){try{navigator.serviceWorker&&navigator.serviceWorker.getRegistration().then(function(r){if(r) r.update()})}catch(e){} setTimeout(function(){location.reload()},300); return}
+  if(upd.state==='san-sang'&&window.AndroidApp){saveNow(); AndroidApp.reload(); return}
+  if(upd.state==='can-apk'&&upd.info&&upd.info.apk){var u=upd.info.apk.url; if(window.AndroidApp&&AndroidApp.openUrl) AndroidApp.openUrl(u); else location.href=u}
+}
+
 window.SCT={ver:APP_VER, label:verLabel, vcmp:vcmp, changelog:CHANGELOG, log:log, list:load, save:saveNow, text:text, clear:clear,
   newErrors:newErrors, markSeen:markSeen, nativeVer:nativeVer, platform:platform, fmt:fmt,
-  onLive:function(f){live=f}};
+  onLive:function(f){live=f}, checkUpdate:checkUpdate, applyUpdate:applyUpdate, upd:upd, shell:shell, webVerApk:webVerApk,
+  onUpdate:function(f){updCb=f}};
 log('ev','🚀 Mở app · '+verLabel(APP_VER)+' · '+platform());
 })();

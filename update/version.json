@@ -1,0 +1,22 @@
+{
+  "ver": "1.0.1-beta.3",
+  "notes": "Tự động cập nhật: mở app là tự kiểm tra bản mới trên GitHub. Bản cài Android tự tải phần giao diện mới (vài trăm KB), dùng từ lần mở sau hoặc bấm Áp dụng ngay; dữ liệu giữ nguyên.",
+  "date": "02/11/2026",
+  "files": [
+    "index.html",
+    "nhatky.js",
+    "kb.js",
+    "kb2.js",
+    "forms.js",
+    "files.js",
+    "tracuu.js",
+    "toc.js",
+    "manifest.json"
+  ],
+  "minApk": 5,
+  "apk": {
+    "versionCode": 5,
+    "versionName": "1.0.1-beta.3",
+    "url": "https://raw.githubusercontent.com/quyetphamkts-cmd/Quan-ly-thiet-ke-xay-dung/main/update/SoCongTruong.apk"
+  }
+}
