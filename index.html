@@ -246,6 +246,8 @@ details.kb li{padding:2px 0}
 <script src="kb2.js"></script>
 <script src="forms.js"></script>
 <script src="files.js"></script>
+<script src="tracuu.js"></script>
+<script src="toc.js"></script>
 <script>
 (function(){
   var KEY='so-cong-truong-v3';
@@ -1019,7 +1021,7 @@ details.kb li{padding:2px 0}
 
   /* ---------- Thư viện thi công ---------- */
   var lib={tab:'checklist',q:'',grp:'',area:'',open:''};
-  var LTABS=[['checklist','Checklist giám sát'],['quy-trinh','Quy trình thi công'],['loi','Lỗi thường gặp'],['su-co','Sự cố'],['qa','Quản lý chất lượng'],['nghiem-thu','Nghiệm thu và lấy mẫu'],['cong-ty','Của công ty'],['nguon','Tài liệu nguồn']];
+  var LTABS=[['checklist','Checklist giám sát'],['quy-trinh','Quy trình thi công'],['loi','Lỗi thường gặp'],['su-co','Sự cố'],['qa','Quản lý chất lượng'],['nghiem-thu','Nghiệm thu và lấy mẫu'],['cong-ty','Của công ty'],['tra-cuu','Tra cứu tài liệu gốc'],['nguon','Tài liệu nguồn']];
   var LV={do:['Phải kiểm kỹ','bad'],cam:['Cần yêu cầu sửa','warn'],xanh:['Nên kiểm','good']};
   function norm(s){return String(s==null?'':s).replace(/[đĐ]/g,'d').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
   function ul(a){return a&&a.length?'<ul>'+a.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>':''}
@@ -1155,6 +1157,7 @@ details.kb li{padding:2px 0}
     if(lib.tab==='nghiem-thu') return libAccept();
     if(lib.tab==='qa') return libQA();
     if(lib.tab==='cong-ty') return vCompanyGuides();
+    if(lib.tab==='tra-cuu') return libTra();
     return libSources();
   }
   function vLibrary(){
@@ -1360,6 +1363,7 @@ details.kb li{padding:2px 0}
   }
   function fileClick(e){
     var t=e.target, b;
+    if(trClick(t)) return true;
     if((b=t.closest('[data-fopen]'))){openFile(b.getAttribute('data-fopen'),b.getAttribute('data-fn'),b.getAttribute('data-ft')); return true}
     if((b=t.closest('[data-fdel]'))){
       var a=b.getAttribute('data-fdel').split('|'), o=fileObj(a[0],a[1]);
@@ -1396,6 +1400,12 @@ details.kb li{padding:2px 0}
   }
   function fileChange(e){
     var el=e.target, v;
+    if(el.id==='trDoc'){tr.doc=el.value; trRefresh(); return true}
+    if(el.id==='trFiles'){
+      var fs=Array.prototype.slice.call(el.files||[]); if(!fs.length) return true;
+      Promise.all(fs.map(function(f){return TRACUU.addFile(f)})).then(function(r){var ds=[].concat.apply([],r); if(!ds.length) throw new Error('không có file .md hợp lệ'); trAdded(ds); render(); flash('Đã nạp '+ds.length+' tài liệu.')}).catch(function(err){flash('Không nạp được: '+err.message)});
+      return true;
+    }
     if(el.id==='xlFile'){if(el.files&&el.files[0]) xlLoad(el.files[0]); return true}
     if(el.id==='tplFile'){
       var fl=el.files&&el.files[0]; if(!fl) return true;
@@ -1421,10 +1431,121 @@ details.kb li{padding:2px 0}
   }
   function fileInput(e){
     var el=e.target, v=el.getAttribute&&el.getAttribute('data-xl');
+    if(el.id==='trQ'){tr.q=el.value; trRefresh(); return true}
     if(xl&&xl.sheets&&v&&(v==='no'||v==='title')){xl[v]=el.value; return true}
     return false;
   }
 
+  /* ---------- Tra cứu tài liệu gốc ---------- */
+  var tr={q:'',doc:'',open:null,busy:''};
+  function trMeta(){S.tl=S.tl||[]; S.ref=S.ref||{}; return S.tl}
+  function trDocOf(id){return TRACUU.cache[id]}
+  function trAdded(ds){
+    trMeta(); ds.forEach(function(d){
+      var m={id:d.id,name:d.name,n:d.pages.length,ocr:d.ocr,method:d.method,pdf:d.pdf};
+      var i=S.tl.map(function(x){return x.id}).indexOf(d.id); if(i>=0) S.tl[i]=m; else S.tl.push(m);
+    }); save();
+  }
+  function trEnsure(){
+    var need=trMeta().filter(function(m){return !TRACUU.cache[m.id]});
+    if(!need.length) return;
+    Promise.all(need.map(function(m){return TRACUU.load(m.id)})).then(trRefresh).catch(function(){});
+  }
+  function trRefresh(){var r=document.getElementById('trRes'); if(r) r.innerHTML=trRes()}
+  function trSearch(){
+    var terms=norm(tr.q).split(/\s+/).filter(Boolean), out=[];
+    if(!terms.length) return out;
+    S.tl.forEach(function(m){
+      var d=TRACUU.cache[m.id]; if(!d||(tr.doc&&tr.doc!==m.id)) return;
+      d.pages.forEach(function(p,i){
+        if(!d.nt) d.nt=[]; if(d.nt[i]===undefined) d.nt[i]=norm(p.t);
+        var nt=d.nt[i], sc=0;
+        for(var k=0;k<terms.length;k++){var c=nt.split(terms[k]).length-1; if(!c){sc=0; break} sc+=c}
+        if(sc) out.push({d:d,p:p,sc:sc,nt:nt,t0:terms[0]});
+      });
+    });
+    out.sort(function(a,b){return b.sc-a.sc});
+    return out;
+  }
+  function trStat(d,n){
+    if(S.ref&&S.ref[d.id+':'+n]) return '<span class="pill good">Đã đối chiếu bản gốc</span>';
+    return d.ocr?'<span class="pill warn">OCR tạm, chưa xác minh</span>':'<span class="pill muted">Trích xuất, chưa đối chiếu</span>';
+  }
+  function trRes(){
+    var h='';
+    if(tr.open){
+      var d=TRACUU.cache[tr.open.id], p=d&&d.pages.filter(function(x){return x.n===tr.open.n})[0];
+      if(d&&p){
+        var idx=d.pages.indexOf(p), key=d.id+':'+p.n, done=!!(S.ref&&S.ref[key]);
+        h+='<section class="panel"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center"><b>'+esc(d.name)+' · '+(d.pdf?'Trang PDF ':'Phần ')+p.n+'</b>'+trStat(d,p.n)+'</div>'+
+          '<pre style="white-space:pre-wrap;font:inherit;margin:10px 0;max-height:60vh;overflow:auto">'+esc(p.t)+'</pre>'+
+          (d.ocr?'<p class="note" style="margin:0 0 8px">Bản OCR tạm có thể sai dấu tiếng Việt, số liệu, công thức, bảng. Không dùng làm căn cứ nghiệm thu khi chưa đối chiếu trang gốc.</p>':'')+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost sm" data-trnav="-1"'+(idx?'':' disabled')+'>Trang trước</button><button type="button" class="btn ghost sm" data-trnav="1"'+(idx<d.pages.length-1?'':' disabled')+'>Trang sau</button><button type="button" class="btn sm'+(done?' good':' ghost')+'" data-trref="'+key+'">'+(done?'Bỏ đánh dấu đã đối chiếu':'Đánh dấu đã đối chiếu với bản gốc')+'</button><button type="button" class="btn ghost sm" data-trclose="1">Đóng</button></div></section>';
+      }
+    }
+    if(tr.q.trim()){
+      var res=trSearch();
+      h+='<p style="margin:8px 0">Tìm thấy <b>'+res.length+'</b> trang'+(res.length>40?' (hiện 40 trang liên quan nhất)':'')+'.</p>';
+      h+=res.slice(0,40).map(function(r){
+        var t=r.p.t, i=r.nt.indexOf(r.t0), sn='';
+        if(i>=0&&r.nt.length===t.length){var a=Math.max(0,i-80), b=Math.min(t.length,i+r.t0.length+160); sn=(a?'…':'')+esc(t.slice(a,i))+'<mark>'+esc(t.slice(i,i+r.t0.length))+'</mark>'+esc(t.slice(i+r.t0.length,b))+(b<t.length?'…':'')}
+        else sn=esc(t.slice(0,220))+'…';
+        return '<article class="log"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b>'+esc(r.d.name)+' · '+(r.d.pdf?'tr.':'phần ')+r.p.n+'</b>'+trStat(r.d,r.p.n)+'</div><p style="margin:6px 0;white-space:pre-wrap">'+sn+'</p><button type="button" class="btn ghost sm" data-tropen="'+r.d.id+'|'+r.p.n+'">Đọc cả trang</button></article>';
+      }).join('');
+    }else if(!tr.open){
+      h+=S.tl.length?'<p class="note">Nhập từ khóa để tra toàn văn. Bản OCR không dấu nên có thể gõ không dấu, ví dụ: coc khoan nhoi, chong tham.</p>':'';
+    }
+    return h;
+  }
+  function libTra(){
+    trMeta(); trEnsure();
+    var list=S.tl.map(function(m){return '<li style="padding:3px 0"><b>'+esc(m.name)+'</b> · '+m.n+(m.pdf?' trang':' phần')+' · '+esc(m.method)+' <button type="button" class="btn ghost sm" data-trdel="'+m.id+'">Gỡ</button></li>'}).join('');
+    var toc=window.TOC||[], names={DOC03:'Tập 1',DOC04:'Tập 2',DOC05:'Tập 3'}, groups={};
+    toc.forEach(function(e){(groups[e[0]]=groups[e[0]]||[]).push(e)});
+    var tocH=Object.keys(groups).map(function(k){
+      var last='';
+      return '<details class="panel"><summary style="cursor:pointer"><b>Sổ tay xử lý sự cố công trình xây dựng, '+names[k]+'</b></summary>'+groups[k].map(function(e){
+        var hd=e[1]!==last?'<h3 style="margin:10px 0 2px">'+esc(e[1])+'</h3>':''; last=e[1];
+        return hd+'<button type="button" class="btn ghost sm" data-tropen="'+k+'|'+e[3]+'" style="display:block;width:100%;text-align:left;margin:2px 0;white-space:normal">'+esc(e[2])+' <span style="color:var(--muted)">· tr.'+e[3]+'</span></button>';
+      }).join('')+'</details>';
+    }).join('');
+    return '<section class="panel"><h2>Nạp tài liệu gốc</h2><p class="sub" style="margin-bottom:8px">Nạp file Markdown (.md) hoặc gói .zip đã OCR. Nội dung chỉ lưu trong trình duyệt của thiết bị này, không gửi đi đâu. Sách có bản quyền (Sổ tay xử lý sự cố, Cẩm nang quản lý dự án) hãy nạp từ file trên máy bạn, đừng đưa lên kho công khai.</p>'+
+      '<form class="f" onsubmit="return false"><label class="wide" for="trFiles">Chọn file .md hoặc .zip<input type="file" id="trFiles" multiple accept=".md,.txt,.zip"></label></form>'+
+      '<div style="margin-top:8px"><button type="button" class="btn ghost sm" data-trbuilt="1">Nạp các tài liệu có sẵn kèm ứng dụng</button> <span id="trMsg" style="color:var(--muted)">'+esc(tr.busy)+'</span></div>'+
+      (list?'<ul style="margin:10px 0 0;padding-left:18px">'+list+'</ul>':'<p class="empty" style="margin-top:10px">Chưa nạp tài liệu nào.</p>')+'</section>'+
+      (S.tl.length?'<section class="panel"><form class="f" onsubmit="return false"><label class="wide" for="trQ">Tra cứu toàn văn<input type="search" id="trQ" value="'+esc(tr.q)+'" placeholder="Ví dụ: coc nhoi, ron nut, kiem tra thep" autocomplete="off"></label><label class="wide" for="trDoc">Trong tài liệu<select id="trDoc"><option value="">Tất cả</option>'+S.tl.map(function(m){return '<option value="'+m.id+'"'+(tr.doc===m.id?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select></label></form></section>':'')+
+      '<div id="trRes">'+trRes()+'</div>'+
+      (tocH?'<h2 style="margin:16px 0 6px">Mục lục Sổ tay xử lý sự cố</h2><p class="note" style="margin-top:0">Số trang là thứ tự trang trong file PDF, không phải số in; mục lục dò từ bản OCR nên cần đối chiếu bản gốc. Bấm một mục để mở trang tương ứng nếu đã nạp tập đó.</p>'+tocH:'');
+  }
+  function trClick(t){
+    var b;
+    if((b=t.closest('[data-trbuilt]'))){
+      var msg=document.getElementById('trMsg'); if(msg) msg.textContent='Đang nạp…';
+      fetch('tai-lieu/manifest.json').then(function(r){if(!r.ok) throw new Error('không tìm thấy'); return r.json()}).then(function(mf){
+        var outs=mf.map(function(it){return it.output}).filter(Boolean).concat(['07_BPTC_coc_tuong_vay.md','08_May_moc_thiet_bi.md']);
+        return Promise.all(outs.map(function(o){
+          return fetch('tai-lieu/'+o).then(function(r){return r.ok?r.text():null}).then(function(tx){return tx?TRACUU.addText(tx,o):null}).catch(function(){return null});
+        }));
+      }).then(function(ds){ds=ds.filter(Boolean); if(!ds.length) throw new Error('chưa có tài liệu nào kèm ứng dụng'); trAdded(ds); render(); flash('Đã nạp '+ds.length+' tài liệu.')}).catch(function(err){if(msg) msg.textContent=''; flash('Không nạp được: '+err.message+'. Hãy dùng ô chọn file.')});
+      return true;
+    }
+    if((b=t.closest('[data-trdel]'))){var id=b.getAttribute('data-trdel'); if(window.confirm('Gỡ tài liệu này khỏi trình duyệt?')){TRACUU.remove(id).catch(function(){}); S.tl=S.tl.filter(function(m){return m.id!==id}); if(tr.open&&tr.open.id===id) tr.open=null; save(); render()} return true}
+    if((b=t.closest('[data-tropen]'))){
+      var a=b.getAttribute('data-tropen').split('|');
+      if(!S.tl||!S.tl.some(function(m){return m.id===a[0]})){flash('Chưa nạp tập này. Hãy nạp file ở phần trên.'); return true}
+      var d=TRACUU.cache[a[0]]; if(d&&!d.pages.some(function(p){return p.n===parseInt(a[1],10)})){flash('Không có trang '+a[1]+' trong bản đã nạp.'); return true}
+      lib.tab='tra-cuu'; tr.open={id:a[0],n:parseInt(a[1],10)};
+      if(document.getElementById('trRes')){trRefresh()} else render();
+      var rs=document.getElementById('trRes'); if(rs) rs.scrollIntoView(); return true;
+    }
+    if((b=t.closest('[data-trnav]'))){
+      var dd=TRACUU.cache[tr.open.id], i=dd.pages.map(function(p){return p.n}).indexOf(tr.open.n)+parseInt(b.getAttribute('data-trnav'),10);
+      if(dd.pages[i]){tr.open.n=dd.pages[i].n; trRefresh()} return true;
+    }
+    if((b=t.closest('[data-trref]'))){var k=b.getAttribute('data-trref'); S.ref=S.ref||{}; if(S.ref[k]) delete S.ref[k]; else S.ref[k]=1; save(); trRefresh(); return true}
+    if(t.closest('[data-trclose]')){tr.open=null; trRefresh(); return true}
+    return false;
+  }
   /* ---------- sự kiện ---------- */
   document.addEventListener('click',function(e){
     if(fileClick(e)) return;
